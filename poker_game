@@ -32,7 +32,6 @@
     overflow-x: hidden;
   }
 
-  /* Felt texture overlay */
   body::before {
     content: '';
     position: fixed;
@@ -46,7 +45,6 @@
   .screen { display: none; position: relative; z-index: 1; }
   .screen.active { display: flex; flex-direction: column; min-height: 100vh; }
 
-  /* ── HEADER ── */
   .header {
     text-align: center;
     padding: 24px 16px 8px;
@@ -67,7 +65,6 @@
     margin-top: 4px;
   }
 
-  /* ── GOLD DIVIDER ── */
   .divider {
     height: 2px;
     background: linear-gradient(to right, transparent, var(--gold), transparent);
@@ -75,7 +72,6 @@
     opacity: 0.5;
   }
 
-  /* ── SETUP SCREEN ── */
   #setup {
     align-items: center;
     justify-content: flex-start;
@@ -199,7 +195,6 @@
   .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(201,168,76,0.5); }
   .btn-gold:active { transform: translateY(0); }
 
-  /* ── GAME SCREEN ── */
   #game {
     align-items: stretch;
     padding: 0 0 40px;
@@ -244,7 +239,6 @@
   }
   .round-info strong { color: var(--cream); font-size: 1rem; font-family: 'Playfair Display', serif; }
 
-  /* TABLE AREA */
   .table-area {
     flex: 1;
     display: flex;
@@ -276,7 +270,6 @@
     flex-wrap: wrap;
   }
 
-  /* PLAYING CARD */
   .card {
     width: 80px;
     height: 112px;
@@ -328,7 +321,6 @@
     display: block;
   }
 
-  /* COMMUNITY CARD AREA */
   .community-area {
     display: flex;
     flex-direction: column;
@@ -343,7 +335,6 @@
     opacity: 0.8;
   }
 
-  /* ACTION BUTTONS */
   .action-area {
     width: 100%;
     max-width: 560px;
@@ -416,7 +407,6 @@
   }
   .btn-quit:hover { border-color: rgba(245,237,224,0.5); color: rgba(245,237,224,0.7); }
 
-  /* RESULT PANEL */
   .result-panel {
     width: 100%;
     max-width: 560px;
@@ -491,7 +481,6 @@
   }
   .btn-next:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(201,168,76,0.4); }
 
-  /* END SCREEN */
   #end {
     align-items: center;
     justify-content: center;
@@ -525,7 +514,6 @@
   .end-score-label { font-size: 0.6rem; letter-spacing: 2px; color: rgba(245,237,224,0.4); margin-bottom: 6px; }
   .end-score-val { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 900; color: var(--gold); }
 
-  /* TOAST */
   .toast {
     position: fixed;
     bottom: 20px;
@@ -544,7 +532,6 @@
   }
   .toast.show { transform: translateX(-50%) translateY(0); }
 
-  /* QUIT MODAL */
   .modal-overlay {
     display: none;
     position: fixed;
@@ -569,9 +556,35 @@
   .modal-buttons { display: flex; gap: 12px; justify-content: center; }
   .btn-resume { background: transparent; border: 1px solid rgba(245,237,224,0.3); color: rgba(245,237,224,0.7); padding: 10px 20px; border-radius: 8px; font-family: 'Space Mono', monospace; font-size: 0.7rem; cursor: pointer; }
   .btn-end-game { background: var(--red); border: none; color: white; padding: 10px 20px; border-radius: 8px; font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
+
+  /* Sound toggle button */
+  .sound-toggle {
+    position: fixed;
+    top: 12px;
+    right: 16px;
+    z-index: 300;
+    background: rgba(15,45,31,0.85);
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 8px;
+    color: var(--gold);
+    font-size: 1.1rem;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .sound-toggle:hover { background: rgba(32,90,60,0.9); }
+  .sound-toggle.muted { opacity: 0.45; }
 </style>
 </head>
 <body>
+
+<!-- Sound toggle -->
+<div class="sound-toggle" id="soundToggle" title="Toggle sound" onclick="toggleSound()">🔊</div>
 
 <!-- ── SETUP SCREEN ── -->
 <div id="setup" class="screen active">
@@ -614,7 +627,7 @@
       <label>Number of Rounds:</label>
       <input type="number" class="rounds-input" id="roundsInput" value="10" min="1" max="100">
     </div>
-    <button class="btn btn-gold" onclick="startGame()">Deal Me In ♠</button>
+    <button class="btn btn-gold" onclick="playClick(); startGame()">Deal Me In ♠</button>
   </div>
 </div>
 
@@ -693,29 +706,29 @@
         <div class="delta-item"><div class="delta-label">You</div><div class="delta-val" id="deltaHuman">0</div></div>
         <div class="delta-item"><div class="delta-label">Bot</div><div class="delta-val" id="deltaBot">0</div></div>
       </div>
-      <button class="btn-next" id="nextBtn" onclick="nextRound()">Next Round →</button>
+      <button class="btn-next" id="nextBtn" onclick="playClick(); nextRound()">Next Round →</button>
     </div>
 
     <!-- ACTION AREA -->
     <div class="action-area" id="actionArea">
       <div class="action-buttons">
-        <button class="btn-action btn-fold" onclick="playerAction('FOLD')">
+        <button class="btn-action btn-fold" onclick="playClick(); playerAction('FOLD')">
           <span class="action-icon">🏳️</span>
           FOLD
           <span class="action-pts">−1 if opp. stays</span>
         </button>
-        <button class="btn-action btn-call" onclick="playerAction('CALL')">
+        <button class="btn-action btn-call" onclick="playClick(); playerAction('CALL')">
           <span class="action-icon">📞</span>
           CALL
           <span class="action-pts">±2 on showdown</span>
         </button>
-        <button class="btn-action btn-raise" onclick="playerAction('RAISE')">
+        <button class="btn-action btn-raise" onclick="playClick(); playerAction('RAISE')">
           <span class="action-icon">🔥</span>
           RAISE
           <span class="action-pts">±3 high risk</span>
         </button>
       </div>
-      <button class="btn-quit" onclick="showQuitModal()">Quit Game</button>
+      <button class="btn-quit" onclick="playClick(); showQuitModal()">Quit Game</button>
     </div>
   </div>
 </div>
@@ -740,7 +753,7 @@
         <div class="end-score-val" id="endBotScore">0</div>
       </div>
     </div>
-    <button class="btn btn-gold" onclick="backToSetup()" style="width:100%;">Play Again ↩</button>
+    <button class="btn btn-gold" onclick="playClick(); backToSetup()" style="width:100%;">Play Again ↩</button>
   </div>
 </div>
 
@@ -750,8 +763,8 @@
     <h3>Quit Game?</h3>
     <p>Your current scores will be shown as the final result. Are you sure you want to end the match?</p>
     <div class="modal-buttons">
-      <button class="btn-resume" onclick="hideQuitModal()">Resume</button>
-      <button class="btn-end-game" onclick="endGame()">End Game</button>
+      <button class="btn-resume" onclick="playClick(); hideQuitModal()">Resume</button>
+      <button class="btn-end-game" onclick="playClick(); endGame()">End Game</button>
     </div>
   </div>
 </div>
@@ -760,6 +773,170 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// ─────────────────────────────────────────────
+// AUDIO ENGINE — Web Audio API, no file deps
+// ─────────────────────────────────────────────
+let audioCtx = null;
+let soundEnabled = true;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  const btn = document.getElementById('soundToggle');
+  btn.textContent = soundEnabled ? '🔊' : '🔇';
+  btn.classList.toggle('muted', !soundEnabled);
+}
+
+// Short, snappy click — soft high-pitched tick
+function playClick() {
+  if (!soundEnabled) return;
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(900, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.04);
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.07);
+  } catch(e) {}
+}
+
+// Win sound — bright rising chime arpeggio
+function playWin() {
+  if (!soundEnabled) return;
+  try {
+    const ctx = getAudioCtx();
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5 E5 G5 C6
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'triangle';
+      const t = ctx.currentTime + i * 0.1;
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(0.0, t);
+      gain.gain.linearRampToValueAtTime(0.22, t + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      osc.start(t);
+      osc.stop(t + 0.35);
+    });
+  } catch(e) {}
+}
+
+// Loss / "FAAAH" sound — descending buzzy trombone slur
+function playLoss() {
+  if (!soundEnabled) return;
+  try {
+    const ctx = getAudioCtx();
+
+    // Main trombone-slide oscillator
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const dist = ctx.createWaveShaper();
+
+    // Mild distortion for brassy buzz
+    const curve = new Float32Array(256);
+    for (let i = 0; i < 256; i++) {
+      const x = (i * 2) / 256 - 1;
+      curve[i] = (Math.PI + 200) * x / (Math.PI + 200 * Math.abs(x));
+    }
+    dist.curve = curve;
+
+    osc.connect(dist);
+    dist.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.type = 'sawtooth';
+    const t = ctx.currentTime;
+    // Classic "wah-waaah" descending pitch
+    osc.frequency.setValueAtTime(370, t);
+    osc.frequency.setValueAtTime(370, t + 0.08);
+    osc.frequency.exponentialRampToValueAtTime(220, t + 0.22);
+    osc.frequency.exponentialRampToValueAtTime(155, t + 0.55);
+    osc.frequency.exponentialRampToValueAtTime(110, t + 0.85);
+
+    gain.gain.setValueAtTime(0.0, t);
+    gain.gain.linearRampToValueAtTime(0.3, t + 0.06);
+    gain.gain.setValueAtTime(0.28, t + 0.22);
+    gain.gain.linearRampToValueAtTime(0.18, t + 0.55);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.95);
+
+    osc.start(t);
+    osc.stop(t + 0.95);
+
+    // Second harmonic for extra buzz
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(185, t);
+    osc2.frequency.exponentialRampToValueAtTime(78, t + 0.85);
+    gain2.gain.setValueAtTime(0.0, t);
+    gain2.gain.linearRampToValueAtTime(0.12, t + 0.06);
+    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+    osc2.start(t);
+    osc2.stop(t + 0.9);
+  } catch(e) {}
+}
+
+// Card deal sound — light soft thud
+function playDeal() {
+  if (!soundEnabled) return;
+  try {
+    const ctx = getAudioCtx();
+    const bufSize = ctx.sampleRate * 0.06;
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufSize, 3) * 0.4;
+    }
+    const src = ctx.createBufferSource();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 600;
+    src.buffer = buf;
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    gain.gain.setValueAtTime(0.7, ctx.currentTime);
+    src.start(ctx.currentTime);
+  } catch(e) {}
+}
+
+// Tie sound — neutral two-tone
+function playTie() {
+  if (!soundEnabled) return;
+  try {
+    const ctx = getAudioCtx();
+    [440, 440].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      const t = ctx.currentTime + i * 0.18;
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(0.15, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      osc.start(t);
+      osc.stop(t + 0.22);
+    });
+  } catch(e) {}
+}
+
 // ─────────────────────────────────────────────
 // CARD ENGINE (mirrors final_bot.py logic)
 // ─────────────────────────────────────────────
@@ -794,7 +971,6 @@ function isStraight(rankVals) {
 }
 
 function evaluateHand(cards) {
-  // cards: array of raw card strings e.g. ["AH","KS","QD"]
   const parsed = cards.map(parseCard);
   const ranks = parsed.map(c => c.rank);
   const suits = parsed.map(c => c.suit);
@@ -812,13 +988,12 @@ function evaluateHand(cards) {
   if (vals.includes(2)) {
     const pair = +Object.keys(counts).find(k => counts[k]===2);
     const kick = +Object.keys(counts).find(k => counts[k]===1);
-    return { cat: 1, name: 'Pair',           tiebreak: [pair, kick] };
+    return { cat: 1, name: 'Pair', tiebreak: [pair, kick] };
   }
   return { cat: 0, name: 'High Card', tiebreak: ranksDesc };
 }
 
 function compareHands(h1, h2) {
-  // returns 1 if h1 wins, -1 if h2 wins, 0 if tie
   if (h1.cat !== h2.cat) return h1.cat > h2.cat ? 1 : -1;
   for (let i = 0; i < Math.max(h1.tiebreak.length, h2.tiebreak.length); i++) {
     const a = h1.tiebreak[i] || 0, b = h2.tiebreak[i] || 0;
@@ -828,7 +1003,7 @@ function compareHands(h1, h2) {
 }
 
 // ─────────────────────────────────────────────
-// BOT LOGIC (mirrors final_bot.py decide_action)
+// BOT LOGIC
 // ─────────────────────────────────────────────
 function botGetHighCardAction(hole, tableCard) {
   const tableRank = RANK_VALUE[tableCard[0]];
@@ -899,36 +1074,30 @@ function dealRound() {
   state.round++;
   state.roundDone = false;
 
-  // Update UI counts
   document.getElementById('roundNum').textContent = state.round;
   document.getElementById('totalRounds').textContent = state.totalRounds;
   document.getElementById('roundStatus').textContent = 'Make your move';
   updateScoreDisplay();
 
-  // Deal cards
   const deck = shuffle(getDeck());
   state.humanHole = [deck.pop(), deck.pop()];
   state.botHole   = [deck.pop(), deck.pop()];
   state.community = deck.pop();
 
-  // Render community card
-  renderCard(state.community, 'commRank','commSuit','commCenter','commRankB','commSuitB','communityCard');
+  playDeal();
 
-  // Render human cards
+  renderCard(state.community, 'commRank','commSuit','commCenter','commRankB','commSuitB','communityCard');
   renderCard(state.humanHole[0], 'h1Rank','h1Suit','h1Center','h1RankB','h1SuitB','humanCard1');
   renderCard(state.humanHole[1], 'h2Rank','h2Suit','h2Center','h2RankB','h2SuitB','humanCard2');
 
-  // Evaluate hands silently
   state.humanEv = evaluateHand([...state.humanHole, state.community]);
   state.botEv   = evaluateHand([...state.botHole, state.community]);
 
-  // Reset bot cards to hidden
   ['botCard1','botCard2'].forEach(id => {
     document.getElementById(id).innerHTML = `<div class="hidden-pattern">${'<span></span>'.repeat(9)}</div>`;
     document.getElementById(id).className = 'card hidden-card';
   });
 
-  // Hide result, show actions
   document.getElementById('resultPanel').classList.remove('show');
   document.getElementById('actionArea').style.display = 'flex';
   setActionButtonsEnabled(true);
@@ -973,31 +1142,34 @@ function playerAction(humanAct) {
   setActionButtonsEnabled(false);
   document.getElementById('actionArea').style.display = 'none';
 
-  // Bot decides
   const botAct = botDecide(state.botHole, state.community);
-
-  // Winner
-  const winner = compareHands(state.humanEv, state.botEv); // 1=human wins, -1=bot wins
+  const winner = compareHands(state.humanEv, state.botEv);
   const [dHuman, dBot] = calculateScore(humanAct, botAct, winner);
 
   state.humanScore += dHuman;
   state.botScore   += dBot;
 
-  // Show bot cards
+  // Play outcome sound
+  if (dHuman > 0) {
+    playWin();
+  } else if (dHuman < 0) {
+    playLoss();
+  } else {
+    playTie();
+  }
+
   revealBotCard(state.botHole[0], 'botCard1');
   revealBotCard(state.botHole[1], 'botCard2');
 
-  // Show result
   showResult(humanAct, botAct, winner, dHuman, dBot);
   updateScoreDisplay();
 
-  // Check if last round
   if (state.round >= state.totalRounds) {
     document.getElementById('nextBtn').textContent = 'See Final Results →';
-    document.getElementById('nextBtn').onclick = endGame;
+    document.getElementById('nextBtn').onclick = () => { playClick(); endGame(); };
   } else {
     document.getElementById('nextBtn').textContent = 'Next Round →';
-    document.getElementById('nextBtn').onclick = nextRound;
+    document.getElementById('nextBtn').onclick = () => { playClick(); nextRound(); };
   }
 }
 
@@ -1021,7 +1193,6 @@ function showResult(humanAct, botAct, winner, dHuman, dBot) {
   const details  = document.getElementById('resultDetails');
   const botReveal = document.getElementById('botReveal');
 
-  // Headline
   let headText = '', headClass = '';
   if (humanAct === 'FOLD' && botAct === 'FOLD') { headText = 'Both Folded'; headClass = 'tie'; }
   else if (humanAct === 'FOLD') { headText = 'You Folded'; headClass = 'lose'; }
@@ -1033,16 +1204,13 @@ function showResult(humanAct, botAct, winner, dHuman, dBot) {
   headline.textContent = headText;
   headline.className = 'result-headline ' + headClass;
 
-  // Details
-  const botRevealHtml = state.botHole.map(c => renderSmallCard(c)).join('');
-  botReveal.innerHTML = botRevealHtml;
+  botReveal.innerHTML = state.botHole.map(c => renderSmallCard(c)).join('');
 
   details.innerHTML = `
     You <strong style="color:var(--gold)">${humanAct}</strong> · Bot <strong style="color:var(--gold)">${botAct}</strong><br>
     Your hand: <span class="hand-name">${state.humanEv.name}</span> · Bot hand: <span class="hand-name">${state.botEv.name}</span>
   `;
 
-  // Deltas
   const dh = document.getElementById('deltaHuman');
   const db = document.getElementById('deltaBot');
   dh.textContent = (dHuman > 0 ? '+' : '') + dHuman;
@@ -1079,6 +1247,10 @@ function endGame() {
   document.getElementById('endTrophy').textContent = trophy;
   document.getElementById('endTitle').textContent  = title;
   document.getElementById('endSubtitle').textContent = `After ${state.round} round${state.round!==1?'s':''}`;
+
+  if (state.humanScore > state.botScore) playWin();
+  else if (state.botScore > state.humanScore) playLoss();
+  else playTie();
 
   showScreen('end');
 }
