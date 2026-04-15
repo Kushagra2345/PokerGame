@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finopoly Poker – Bot vs Human</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --felt: #1a4731;
+    --felt-light: #205a3c;
+    --felt-dark: #0f2d1f;
+    --gold: #c9a84c;
+    --gold-light: #f0d07a;
+    --cream: #f5ede0;
+    --red: #c0392b;
+    --red-light: #e74c3c;
+    --chip-blue: #2980b9;
+    --chip-white: #ecf0f1;
+    --chip-black: #2c3e50;
+    --text-light: #f5ede0;
+    --shadow: rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Space Mono', monospace;
+    background: radial-gradient(ellipse at center, #0f2d1f 0%, #060f0a 100%);
+    min-height: 100vh;
+    color: var(--cream);
+    overflow-x: hidden;
+  }
+
+  /* Felt texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.01) 2px, rgba(255,255,255,0.01) 4px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .screen { display: none; position: relative; z-index: 1; }
+  .screen.active { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    padding: 24px 16px 8px;
+  }
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 2px 12px rgba(201,168,76,0.4), 0 0 40px rgba(201,168,76,0.15);
+    letter-spacing: 2px;
+  }
+  .header .subtitle {
+    color: rgba(245,237,224,0.5);
+    font-size: 0.7rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* ── GOLD DIVIDER ── */
+  .divider {
+    height: 2px;
+    background: linear-gradient(to right, transparent, var(--gold), transparent);
+    margin: 8px 48px;
+    opacity: 0.5;
+  }
+
+  /* ── SETUP SCREEN ── */
+  #setup {
+    align-items: center;
+    justify-content: flex-start;
+    padding-bottom: 40px;
+  }
+
+  .setup-card {
+    background: rgba(32,90,60,0.5);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 16px;
+    padding: 32px;
+    margin: 16px;
+    max-width: 600px;
+    width: calc(100% - 32px);
+    backdrop-filter: blur(8px);
+  }
+
+  .setup-card h2 {
+    font-family: 'Playfair Display', serif;
+    color: var(--gold);
+    font-size: 1.3rem;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .rules-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  @media(max-width:500px){ .rules-grid { grid-template-columns: 1fr; } }
+
+  .rule-item {
+    background: rgba(15,45,31,0.6);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.72rem;
+    line-height: 1.5;
+  }
+  .rule-item .rank {
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .scoring-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.68rem;
+    margin-top: 8px;
+  }
+  .scoring-table th {
+    background: rgba(201,168,76,0.2);
+    color: var(--gold);
+    padding: 6px 8px;
+    text-align: left;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .scoring-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid rgba(201,168,76,0.08);
+    color: rgba(245,237,224,0.8);
+  }
+  .scoring-table tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
+  .pos { color: #2ecc71; font-weight: 700; }
+  .neg { color: #e74c3c; font-weight: 700; }
+
+  .rounds-selector {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    justify-content: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+  }
+  .rounds-selector label {
+    font-size: 0.8rem;
+    color: var(--gold);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .rounds-input {
+    background: rgba(15,45,31,0.8);
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    color: var(--cream);
+    font-family: 'Space Mono', monospace;
+    font-size: 1.1rem;
+    padding: 8px 16px;
+    width: 80px;
+    text-align: center;
+  }
+  .rounds-input:focus { outline: none; border-color: var(--gold-light); box-shadow: 0 0 12px rgba(201,168,76,0.3); }
+
+  .btn {
+    cursor: pointer;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    padding: 14px 32px;
+    font-size: 0.8rem;
+  }
+  .btn-gold {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
+    color: #1a1a1a;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.35);
+  }
+  .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(201,168,76,0.5); }
+  .btn-gold:active { transform: translateY(0); }
+
+  /* ── GAME SCREEN ── */
+  #game {
+    align-items: stretch;
+    padding: 0 0 40px;
+  }
+
+  .scoreboard {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(15,45,31,0.9);
+    border-bottom: 2px solid rgba(201,168,76,0.3);
+    padding: 12px 20px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .score-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+  }
+  .score-label {
+    font-size: 0.6rem;
+    color: rgba(245,237,224,0.5);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .score-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .score-value.positive { color: #2ecc71; }
+  .score-value.negative { color: #e74c3c; }
+  .round-info {
+    font-size: 0.65rem;
+    color: rgba(245,237,224,0.6);
+    text-align: center;
+    letter-spacing: 2px;
+  }
+  .round-info strong { color: var(--cream); font-size: 1rem; font-family: 'Playfair Display', serif; }
+
+  /* TABLE AREA */
+  .table-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px;
+    gap: 24px;
+  }
+
+  .player-zone {
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .zone-label {
+    font-size: 0.6rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(245,237,224,0.4);
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  .cards-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* PLAYING CARD */
+  .card {
+    width: 80px;
+    height: 112px;
+    border-radius: 10px;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 6px 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.8);
+    position: relative;
+    transition: transform 0.3s;
+    flex-shrink: 0;
+  }
+  .card.red-card { color: #c0392b; }
+  .card.black-card { color: #1a1a2e; }
+  .card.hidden-card {
+    background: linear-gradient(135deg, #1a4731 25%, #205a3c 50%, #1a4731 75%);
+    background-size: 8px 8px;
+  }
+  .card.community-card {
+    width: 90px;
+    height: 126px;
+    border: 3px solid var(--gold);
+    box-shadow: 0 6px 30px rgba(201,168,76,0.4), 0 0 0 1px rgba(201,168,76,0.2);
+  }
+  .card.revealed { animation: flipIn 0.4s ease; }
+  @keyframes flipIn {
+    0% { transform: rotateY(90deg) scale(0.9); opacity: 0; }
+    100% { transform: rotateY(0deg) scale(1); opacity: 1; }
+  }
+
+  .card-corner { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+  .card-rank { font-size: 1rem; font-weight: 900; font-family: 'Playfair Display', serif; }
+  .card-suit { font-size: 0.75rem; }
+  .card-center { font-size: 2rem; text-align: center; }
+  .card-corner.bottom { transform: rotate(180deg); align-self: flex-end; }
+
+  .hidden-pattern {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 8px 6px;
+    height: 100%;
+  }
+  .hidden-pattern span {
+    background: rgba(201,168,76,0.3);
+    border-radius: 3px;
+    display: block;
+  }
+
+  /* COMMUNITY CARD AREA */
+  .community-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .community-label {
+    font-size: 0.6rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.8;
+  }
+
+  /* ACTION BUTTONS */
+  .action-area {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .btn-action {
+    padding: 14px 8px;
+    border-radius: 12px;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .btn-action:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+  .btn-action .action-icon { font-size: 1.3rem; }
+  .btn-action .action-pts { font-size: 0.55rem; color: rgba(255,255,255,0.6); letter-spacing: 1px; font-weight: 400; }
+
+  .btn-fold {
+    background: rgba(192,57,43,0.2);
+    border-color: rgba(192,57,43,0.5);
+    color: #e74c3c;
+  }
+  .btn-fold:hover:not(:disabled) { background: rgba(192,57,43,0.4); border-color: #e74c3c; transform: translateY(-2px); }
+
+  .btn-call {
+    background: rgba(41,128,185,0.2);
+    border-color: rgba(41,128,185,0.5);
+    color: #3498db;
+  }
+  .btn-call:hover:not(:disabled) { background: rgba(41,128,185,0.4); border-color: #3498db; transform: translateY(-2px); }
+
+  .btn-raise {
+    background: rgba(201,168,76,0.2);
+    border-color: rgba(201,168,76,0.5);
+    color: var(--gold);
+  }
+  .btn-raise:hover:not(:disabled) { background: rgba(201,168,76,0.4); border-color: var(--gold); transform: translateY(-2px); }
+
+  .btn-quit {
+    background: transparent;
+    border: 1px solid rgba(245,237,224,0.2);
+    color: rgba(245,237,224,0.4);
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-quit:hover { border-color: rgba(245,237,224,0.5); color: rgba(245,237,224,0.7); }
+
+  /* RESULT PANEL */
+  .result-panel {
+    width: 100%;
+    max-width: 560px;
+    background: rgba(15,45,31,0.9);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+    display: none;
+    animation: slideUp 0.3s ease;
+  }
+  .result-panel.show { display: block; }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .result-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .result-headline.win { color: #2ecc71; }
+  .result-headline.lose { color: #e74c3c; }
+  .result-headline.tie { color: var(--gold); }
+
+  .result-details {
+    font-size: 0.7rem;
+    color: rgba(245,237,224,0.6);
+    margin-bottom: 16px;
+    line-height: 1.8;
+  }
+  .result-details .hand-name { color: var(--cream); font-weight: 700; }
+
+  .bot-reveal {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 12px 0;
+    flex-wrap: wrap;
+  }
+
+  .score-delta {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin: 12px 0;
+    font-size: 0.8rem;
+  }
+  .delta-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .delta-label { font-size: 0.55rem; letter-spacing: 2px; color: rgba(245,237,224,0.4); }
+  .delta-val { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; }
+  .delta-val.pos { color: #2ecc71; }
+  .delta-val.neg { color: #e74c3c; }
+  .delta-val.zero { color: rgba(245,237,224,0.4); }
+
+  .btn-next {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+    color: #1a1a1a;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 28px;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 4px;
+  }
+  .btn-next:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(201,168,76,0.4); }
+
+  /* END SCREEN */
+  #end {
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+  .end-card {
+    background: rgba(32,90,60,0.5);
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 20px;
+    padding: 40px 32px;
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+    backdrop-filter: blur(8px);
+  }
+  .end-trophy { font-size: 3.5rem; margin-bottom: 12px; }
+  .end-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .end-subtitle { color: rgba(245,237,224,0.5); font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 28px; }
+  .end-scores {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    margin-bottom: 28px;
+  }
+  .end-score-block { display: flex; flex-direction: column; align-items: center; }
+  .end-score-label { font-size: 0.6rem; letter-spacing: 2px; color: rgba(245,237,224,0.4); margin-bottom: 6px; }
+  .end-score-val { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 900; color: var(--gold); }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: rgba(15,45,31,0.95);
+    border: 1px solid var(--gold);
+    color: var(--cream);
+    padding: 10px 24px;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    z-index: 100;
+    transition: transform 0.3s;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* QUIT MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: #0f2d1f;
+    border: 1px solid var(--gold);
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 360px;
+    width: 90%;
+    text-align: center;
+  }
+  .modal-box h3 { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 1.3rem; margin-bottom: 12px; }
+  .modal-box p { font-size: 0.75rem; color: rgba(245,237,224,0.6); margin-bottom: 24px; line-height: 1.7; }
+  .modal-buttons { display: flex; gap: 12px; justify-content: center; }
+  .btn-resume { background: transparent; border: 1px solid rgba(245,237,224,0.3); color: rgba(245,237,224,0.7); padding: 10px 20px; border-radius: 8px; font-family: 'Space Mono', monospace; font-size: 0.7rem; cursor: pointer; }
+  .btn-end-game { background: var(--red); border: none; color: white; padding: 10px 20px; border-radius: 8px; font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- ── SETUP SCREEN ── -->
+<div id="setup" class="screen active">
+  <div class="header">
+    <h1>♠ FINOPOLY POKER ♠</h1>
+    <div class="subtitle">Bot vs Human · 3-Card Edition</div>
+    <div class="divider"></div>
+  </div>
+
+  <div class="setup-card">
+    <h2>📋 Hand Rankings <span style="font-size:0.7rem;color:rgba(245,237,224,0.4);font-family:'Space Mono',monospace;">(highest → lowest)</span></h2>
+    <div class="rules-grid">
+      <div class="rule-item"><span class="rank">① Straight Flush</span>3 same-suit sequential cards. Tie: higher top card wins. A-2-3 is lowest.</div>
+      <div class="rule-item"><span class="rank">② Three of a Kind</span>3 cards of same rank. Tie: higher rank wins.</div>
+      <div class="rule-item"><span class="rank">③ Straight</span>3 sequential cards, mixed suits. Tie: higher top card wins.</div>
+      <div class="rule-item"><span class="rank">④ Flush</span>3 same-suit cards, not sequential. Tie: compare cards top-down.</div>
+      <div class="rule-item"><span class="rank">⑤ Pair</span>2 cards same rank + kicker. Tie: higher pair, then higher kicker.</div>
+      <div class="rule-item"><span class="rank">⑥ High Card</span>None of the above. Tie: compare cards top-down.</div>
+    </div>
+  </div>
+
+  <div class="setup-card">
+    <h2>🎲 Scoring Table</h2>
+    <table class="scoring-table">
+      <tr><th>You</th><th>Bot</th><th>Outcome</th><th>Your Pts</th><th>Bot Pts</th></tr>
+      <tr><td>FOLD</td><td>FOLD</td><td>Both forfeit</td><td class="zero">0</td><td class="zero">0</td></tr>
+      <tr><td>CALL</td><td>FOLD</td><td>Bot forfeits, you win</td><td class="pos">+2</td><td class="neg">−1</td></tr>
+      <tr><td>FOLD</td><td>CALL/RAISE</td><td>You forfeit, bot wins</td><td class="neg">−1</td><td class="pos">+2/3</td></tr>
+      <tr><td>RAISE</td><td>FOLD</td><td>Bot forfeits, you win</td><td class="pos">+3</td><td class="neg">−1</td></tr>
+      <tr><td>CALL</td><td>CALL</td><td>Showdown (winner ±2)</td><td>±2</td><td>±2</td></tr>
+      <tr><td>RAISE</td><td>CALL</td><td>You win +3, lose −3</td><td>±3</td><td>±2</td></tr>
+      <tr><td>CALL</td><td>RAISE</td><td>You win +2, lose −2</td><td>±2</td><td>±3</td></tr>
+      <tr><td>RAISE</td><td>RAISE</td><td>High-risk showdown ±3</td><td>±3</td><td>±3</td></tr>
+    </table>
+  </div>
+
+  <div class="setup-card" style="text-align:center;">
+    <h2 style="justify-content:center;">⚙️ Game Setup</h2>
+    <div class="rounds-selector">
+      <label>Number of Rounds:</label>
+      <input type="number" class="rounds-input" id="roundsInput" value="10" min="1" max="100">
+    </div>
+    <button class="btn btn-gold" onclick="startGame()">Deal Me In ♠</button>
+  </div>
+</div>
+
+<!-- ── GAME SCREEN ── -->
+<div id="game" class="screen">
+  <div class="scoreboard">
+    <div class="score-block">
+      <div class="score-label">You</div>
+      <div class="score-value" id="humanScore">0</div>
+    </div>
+    <div class="round-info">
+      Round <strong id="roundNum">1</strong> of <strong id="totalRounds">10</strong>
+      <br><span id="roundStatus">Make your move</span>
+    </div>
+    <div class="score-block">
+      <div class="score-label">Bot</div>
+      <div class="score-value" id="botScore">0</div>
+    </div>
+  </div>
+
+  <div class="table-area">
+    <!-- BOT ZONE -->
+    <div class="player-zone">
+      <div class="zone-label">🤖 Bot's Hand (hidden)</div>
+      <div class="cards-row">
+        <div class="card hidden-card" id="botCard1">
+          <div class="hidden-pattern">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+        <div class="card hidden-card" id="botCard2">
+          <div class="hidden-pattern">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMMUNITY CARD -->
+    <div class="community-area">
+      <div class="community-label">⟡ Community Card ⟡</div>
+      <div class="card community-card revealed" id="communityCard">
+        <div class="card-corner"><div class="card-rank" id="commRank">?</div><div class="card-suit" id="commSuit">?</div></div>
+        <div class="card-center" id="commCenter">?</div>
+        <div class="card-corner bottom"><div class="card-rank" id="commRankB">?</div><div class="card-suit" id="commSuitB">?</div></div>
+      </div>
+    </div>
+
+    <!-- HUMAN ZONE -->
+    <div class="player-zone">
+      <div class="zone-label">🧑 Your Hand</div>
+      <div class="cards-row">
+        <div class="card revealed" id="humanCard1">
+          <div class="card-corner"><div class="card-rank" id="h1Rank">A</div><div class="card-suit" id="h1Suit">♠</div></div>
+          <div class="card-center" id="h1Center">♠</div>
+          <div class="card-corner bottom"><div class="card-rank" id="h1RankB">A</div><div class="card-suit" id="h1SuitB">♠</div></div>
+        </div>
+        <div class="card revealed" id="humanCard2">
+          <div class="card-corner"><div class="card-rank" id="h2Rank">K</div><div class="card-suit" id="h2Suit">♥</div></div>
+          <div class="card-center" id="h2Center">♥</div>
+          <div class="card-corner bottom"><div class="card-rank" id="h2RankB">K</div><div class="card-suit" id="h2SuitB">♥</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULT PANEL -->
+    <div class="result-panel" id="resultPanel">
+      <div class="result-headline" id="resultHeadline">—</div>
+      <div class="result-details" id="resultDetails"></div>
+      <div class="bot-reveal" id="botReveal"></div>
+      <div class="score-delta">
+        <div class="delta-item"><div class="delta-label">You</div><div class="delta-val" id="deltaHuman">0</div></div>
+        <div class="delta-item"><div class="delta-label">Bot</div><div class="delta-val" id="deltaBot">0</div></div>
+      </div>
+      <button class="btn-next" id="nextBtn" onclick="nextRound()">Next Round →</button>
+    </div>
+
+    <!-- ACTION AREA -->
+    <div class="action-area" id="actionArea">
+      <div class="action-buttons">
+        <button class="btn-action btn-fold" onclick="playerAction('FOLD')">
+          <span class="action-icon">🏳️</span>
+          FOLD
+          <span class="action-pts">−1 if opp. stays</span>
+        </button>
+        <button class="btn-action btn-call" onclick="playerAction('CALL')">
+          <span class="action-icon">📞</span>
+          CALL
+          <span class="action-pts">±2 on showdown</span>
+        </button>
+        <button class="btn-action btn-raise" onclick="playerAction('RAISE')">
+          <span class="action-icon">🔥</span>
+          RAISE
+          <span class="action-pts">±3 high risk</span>
+        </button>
+      </div>
+      <button class="btn-quit" onclick="showQuitModal()">Quit Game</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── END SCREEN ── -->
+<div id="end" class="screen">
+  <div class="header">
+    <h1>♠ FINOPOLY POKER ♠</h1>
+    <div class="divider"></div>
+  </div>
+  <div class="end-card">
+    <div class="end-trophy" id="endTrophy">🏆</div>
+    <div class="end-title" id="endTitle">Game Over</div>
+    <div class="end-subtitle" id="endSubtitle">FINAL STANDINGS</div>
+    <div class="end-scores">
+      <div class="end-score-block">
+        <div class="end-score-label">YOU</div>
+        <div class="end-score-val" id="endHumanScore">0</div>
+      </div>
+      <div class="end-score-block">
+        <div class="end-score-label">BOT</div>
+        <div class="end-score-val" id="endBotScore">0</div>
+      </div>
+    </div>
+    <button class="btn btn-gold" onclick="backToSetup()" style="width:100%;">Play Again ↩</button>
+  </div>
+</div>
+
+<!-- QUIT MODAL -->
+<div class="modal-overlay" id="quitModal">
+  <div class="modal-box">
+    <h3>Quit Game?</h3>
+    <p>Your current scores will be shown as the final result. Are you sure you want to end the match?</p>
+    <div class="modal-buttons">
+      <button class="btn-resume" onclick="hideQuitModal()">Resume</button>
+      <button class="btn-end-game" onclick="endGame()">End Game</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// CARD ENGINE (mirrors final_bot.py logic)
+// ─────────────────────────────────────────────
+const RANKS = "23456789TJQKA";
+const SUITS = "SHDC";
+const RANK_VALUE = {};
+RANKS.split('').forEach((r, i) => RANK_VALUE[r] = i + 2);
+const SUIT_SYMBOL = { S: '♠', H: '♥', D: '♦', C: '♣' };
+const SUIT_COLOR  = { S: 'black', H: 'red', D: 'red', C: 'black' };
+const RANK_DISPLAY = { T: '10', J: 'J', Q: 'Q', K: 'K', A: 'A' };
+
+function getDeck() {
+  const deck = [];
+  for (const r of RANKS) for (const s of SUITS) deck.push(r + s);
+  return deck;
+}
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+function parseCard(c) { return { rank: RANK_VALUE[c[0]], suit: c[1], raw: c }; }
+function rankDisplay(r) { return RANK_DISPLAY[r] || r; }
+
+function isStraight(rankVals) {
+  const r = [...rankVals].sort((a,b) => a - b);
+  if (r[0]+1 === r[1] && r[1]+1 === r[2]) return { is: true, high: r[2] };
+  if (new Set(r).size === 3 && r.includes(14) && r.includes(2) && r.includes(3)) return { is: true, high: 3 };
+  return { is: false, high: 0 };
+}
+
+function evaluateHand(cards) {
+  // cards: array of raw card strings e.g. ["AH","KS","QD"]
+  const parsed = cards.map(parseCard);
+  const ranks = parsed.map(c => c.rank);
+  const suits = parsed.map(c => c.suit);
+  const ranksDesc = [...ranks].sort((a,b) => b - a);
+  const counts = {};
+  ranks.forEach(r => counts[r] = (counts[r] || 0) + 1);
+  const isFlush = new Set(suits).size === 1;
+  const { is: isSt, high: stHigh } = isStraight(ranks);
+  const vals = Object.values(counts);
+
+  if (isFlush && isSt)  return { cat: 5, name: 'Straight Flush', tiebreak: [stHigh] };
+  if (vals.includes(3)) return { cat: 4, name: 'Three of a Kind', tiebreak: [+Object.keys(counts).find(k => counts[k]===3)] };
+  if (isSt)             return { cat: 3, name: 'Straight',        tiebreak: [stHigh] };
+  if (isFlush)          return { cat: 2, name: 'Flush',           tiebreak: ranksDesc };
+  if (vals.includes(2)) {
+    const pair = +Object.keys(counts).find(k => counts[k]===2);
+    const kick = +Object.keys(counts).find(k => counts[k]===1);
+    return { cat: 1, name: 'Pair',           tiebreak: [pair, kick] };
+  }
+  return { cat: 0, name: 'High Card', tiebreak: ranksDesc };
+}
+
+function compareHands(h1, h2) {
+  // returns 1 if h1 wins, -1 if h2 wins, 0 if tie
+  if (h1.cat !== h2.cat) return h1.cat > h2.cat ? 1 : -1;
+  for (let i = 0; i < Math.max(h1.tiebreak.length, h2.tiebreak.length); i++) {
+    const a = h1.tiebreak[i] || 0, b = h2.tiebreak[i] || 0;
+    if (a !== b) return a > b ? 1 : -1;
+  }
+  return 0;
+}
+
+// ─────────────────────────────────────────────
+// BOT LOGIC (mirrors final_bot.py decide_action)
+// ─────────────────────────────────────────────
+function botGetHighCardAction(hole, tableCard) {
+  const tableRank = RANK_VALUE[tableCard[0]];
+  const holeRanks = hole.map(c => RANK_VALUE[c[0]]);
+  const maxHole = Math.max(...holeRanks);
+
+  if (tableRank === 14) { return maxHole >= 12 ? 'RAISE' : maxHole >= 9 ? 'CALL' : 'FOLD'; }
+  if (tableRank === 13) { return maxHole >= 12 ? 'RAISE' : maxHole >= 9 ? 'CALL' : 'FOLD'; }
+  if (tableRank === 12) { return maxHole >= 13 ? 'RAISE' : maxHole >= 9 ? 'CALL' : 'FOLD'; }
+  if (tableRank === 11) { return maxHole >= 13 ? 'RAISE' : maxHole >= 9 ? 'CALL' : 'FOLD'; }
+  if (tableRank === 10) { return maxHole >= 13 ? 'RAISE' : maxHole >= 9 ? 'CALL' : 'FOLD'; }
+  if (tableRank === 9)  { return maxHole >= 13 ? 'RAISE' : maxHole >= 10 ? 'CALL' : 'FOLD'; }
+  if (tableRank >= 5)   { return maxHole >= 13 ? 'RAISE' : maxHole >= 11 ? 'CALL' : 'FOLD'; }
+  return maxHole >= 13 ? 'RAISE' : maxHole >= 10 ? 'CALL' : 'FOLD';
+}
+
+function botDecide(hole, tableCard) {
+  const allCards = [...hole, tableCard];
+  const ev = evaluateHand(allCards);
+  if (ev.cat >= 1) return 'RAISE';
+  return botGetHighCardAction(hole, tableCard);
+}
+
+// ─────────────────────────────────────────────
+// SCORING
+// ─────────────────────────────────────────────
+function calculateScore(act1, act2, winner) {
+  if (act1 === 'FOLD' && act2 === 'FOLD') return [0, 0];
+  if (act1 === 'FOLD') return [-1, act2 === 'CALL' ? 2 : 3];
+  if (act2 === 'FOLD') return [act1 === 'CALL' ? 2 : 3, -1];
+  if (winner === 0) return [0, 0];
+  const wm = winner === 1 ? 1 : -1;
+  if (act1 === 'CALL' && act2 === 'CALL') return [2*wm, -2*wm];
+  if (act1 === 'RAISE' && act2 === 'RAISE') return [3*wm, -3*wm];
+  if (act1 === 'RAISE' && act2 === 'CALL') return winner===1 ? [3,-2] : [-3,2];
+  if (act1 === 'CALL'  && act2 === 'RAISE') return winner===1 ? [2,-3] : [-2,3];
+  return [0, 0];
+}
+
+// ─────────────────────────────────────────────
+// GAME STATE
+// ─────────────────────────────────────────────
+let state = {
+  humanScore: 0,
+  botScore: 0,
+  round: 0,
+  totalRounds: 10,
+  humanHole: [],
+  botHole: [],
+  community: '',
+  humanEv: null,
+  botEv: null,
+  roundDone: false
+};
+
+function startGame() {
+  const n = parseInt(document.getElementById('roundsInput').value);
+  if (isNaN(n) || n < 1) { showToast('Please enter a valid round count'); return; }
+  state.humanScore = 0;
+  state.botScore = 0;
+  state.round = 0;
+  state.totalRounds = n;
+  showScreen('game');
+  dealRound();
+}
+
+function dealRound() {
+  state.round++;
+  state.roundDone = false;
+
+  // Update UI counts
+  document.getElementById('roundNum').textContent = state.round;
+  document.getElementById('totalRounds').textContent = state.totalRounds;
+  document.getElementById('roundStatus').textContent = 'Make your move';
+  updateScoreDisplay();
+
+  // Deal cards
+  const deck = shuffle(getDeck());
+  state.humanHole = [deck.pop(), deck.pop()];
+  state.botHole   = [deck.pop(), deck.pop()];
+  state.community = deck.pop();
+
+  // Render community card
+  renderCard(state.community, 'commRank','commSuit','commCenter','commRankB','commSuitB','communityCard');
+
+  // Render human cards
+  renderCard(state.humanHole[0], 'h1Rank','h1Suit','h1Center','h1RankB','h1SuitB','humanCard1');
+  renderCard(state.humanHole[1], 'h2Rank','h2Suit','h2Center','h2RankB','h2SuitB','humanCard2');
+
+  // Evaluate hands silently
+  state.humanEv = evaluateHand([...state.humanHole, state.community]);
+  state.botEv   = evaluateHand([...state.botHole, state.community]);
+
+  // Reset bot cards to hidden
+  ['botCard1','botCard2'].forEach(id => {
+    document.getElementById(id).innerHTML = `<div class="hidden-pattern">${'<span></span>'.repeat(9)}</div>`;
+    document.getElementById(id).className = 'card hidden-card';
+  });
+
+  // Hide result, show actions
+  document.getElementById('resultPanel').classList.remove('show');
+  document.getElementById('actionArea').style.display = 'flex';
+  setActionButtonsEnabled(true);
+}
+
+function renderCard(raw, rankId, suitId, centerId, rankBId, suitBId, cardId) {
+  const r = raw[0], s = raw[1];
+  const rDisp = rankDisplay(r);
+  const sSym  = SUIT_SYMBOL[s];
+  const isRed = SUIT_COLOR[s] === 'red';
+  const el = document.getElementById(cardId);
+  if (el) {
+    el.className = 'card revealed ' + (isRed ? 'red-card' : 'black-card');
+    if (cardId === 'communityCard') el.classList.add('community-card');
+  }
+  document.getElementById(rankId).textContent  = rDisp;
+  document.getElementById(suitId).textContent  = sSym;
+  document.getElementById(centerId).textContent = sSym;
+  document.getElementById(rankBId).textContent  = rDisp;
+  document.getElementById(suitBId).textContent  = sSym;
+}
+
+function renderSmallCard(raw) {
+  const r = raw[0], s = raw[1];
+  const rDisp = rankDisplay(r);
+  const sSym  = SUIT_SYMBOL[s];
+  const isRed = SUIT_COLOR[s] === 'red';
+  return `<div class="card ${isRed?'red-card':'black-card'} revealed" style="width:60px;height:85px;padding:4px 6px;font-size:0.85rem;">
+    <div class="card-corner"><div class="card-rank" style="font-size:0.8rem;">${rDisp}</div><div class="card-suit" style="font-size:0.6rem;">${sSym}</div></div>
+    <div class="card-center" style="font-size:1.4rem;">${sSym}</div>
+    <div class="card-corner bottom"><div class="card-rank" style="font-size:0.8rem;">${rDisp}</div><div class="card-suit" style="font-size:0.6rem;">${sSym}</div></div>
+  </div>`;
+}
+
+function setActionButtonsEnabled(on) {
+  document.querySelectorAll('.btn-action').forEach(b => b.disabled = !on);
+}
+
+function playerAction(humanAct) {
+  if (state.roundDone) return;
+  state.roundDone = true;
+  setActionButtonsEnabled(false);
+  document.getElementById('actionArea').style.display = 'none';
+
+  // Bot decides
+  const botAct = botDecide(state.botHole, state.community);
+
+  // Winner
+  const winner = compareHands(state.humanEv, state.botEv); // 1=human wins, -1=bot wins
+  const [dHuman, dBot] = calculateScore(humanAct, botAct, winner);
+
+  state.humanScore += dHuman;
+  state.botScore   += dBot;
+
+  // Show bot cards
+  revealBotCard(state.botHole[0], 'botCard1');
+  revealBotCard(state.botHole[1], 'botCard2');
+
+  // Show result
+  showResult(humanAct, botAct, winner, dHuman, dBot);
+  updateScoreDisplay();
+
+  // Check if last round
+  if (state.round >= state.totalRounds) {
+    document.getElementById('nextBtn').textContent = 'See Final Results →';
+    document.getElementById('nextBtn').onclick = endGame;
+  } else {
+    document.getElementById('nextBtn').textContent = 'Next Round →';
+    document.getElementById('nextBtn').onclick = nextRound;
+  }
+}
+
+function revealBotCard(raw, cardId) {
+  const r = raw[0], s = raw[1];
+  const rDisp = rankDisplay(r);
+  const sSym  = SUIT_SYMBOL[s];
+  const isRed = SUIT_COLOR[s] === 'red';
+  const el = document.getElementById(cardId);
+  el.className = 'card revealed ' + (isRed ? 'red-card' : 'black-card');
+  el.innerHTML = `
+    <div class="card-corner"><div class="card-rank">${rDisp}</div><div class="card-suit">${sSym}</div></div>
+    <div class="card-center">${sSym}</div>
+    <div class="card-corner bottom"><div class="card-rank">${rDisp}</div><div class="card-suit">${sSym}</div></div>
+  `;
+}
+
+function showResult(humanAct, botAct, winner, dHuman, dBot) {
+  const panel = document.getElementById('resultPanel');
+  const headline = document.getElementById('resultHeadline');
+  const details  = document.getElementById('resultDetails');
+  const botReveal = document.getElementById('botReveal');
+
+  // Headline
+  let headText = '', headClass = '';
+  if (humanAct === 'FOLD' && botAct === 'FOLD') { headText = 'Both Folded'; headClass = 'tie'; }
+  else if (humanAct === 'FOLD') { headText = 'You Folded'; headClass = 'lose'; }
+  else if (botAct === 'FOLD')   { headText = 'Bot Folded — You Win!'; headClass = 'win'; }
+  else if (winner === 1)  { headText = '🏆 You Win!'; headClass = 'win'; }
+  else if (winner === -1) { headText = '🤖 Bot Wins'; headClass = 'lose'; }
+  else { headText = '🤝 Tie'; headClass = 'tie'; }
+
+  headline.textContent = headText;
+  headline.className = 'result-headline ' + headClass;
+
+  // Details
+  const botRevealHtml = state.botHole.map(c => renderSmallCard(c)).join('');
+  botReveal.innerHTML = botRevealHtml;
+
+  details.innerHTML = `
+    You <strong style="color:var(--gold)">${humanAct}</strong> · Bot <strong style="color:var(--gold)">${botAct}</strong><br>
+    Your hand: <span class="hand-name">${state.humanEv.name}</span> · Bot hand: <span class="hand-name">${state.botEv.name}</span>
+  `;
+
+  // Deltas
+  const dh = document.getElementById('deltaHuman');
+  const db = document.getElementById('deltaBot');
+  dh.textContent = (dHuman > 0 ? '+' : '') + dHuman;
+  dh.className   = 'delta-val ' + (dHuman > 0 ? 'pos' : dHuman < 0 ? 'neg' : 'zero');
+  db.textContent = (dBot > 0 ? '+' : '') + dBot;
+  db.className   = 'delta-val ' + (dBot > 0 ? 'pos' : dBot < 0 ? 'neg' : 'zero');
+
+  panel.classList.add('show');
+}
+
+function updateScoreDisplay() {
+  const hs = document.getElementById('humanScore');
+  const bs = document.getElementById('botScore');
+  hs.textContent = state.humanScore;
+  bs.textContent = state.botScore;
+  hs.className = 'score-value ' + (state.humanScore > 0 ? 'positive' : state.humanScore < 0 ? 'negative' : '');
+  bs.className = 'score-value ' + (state.botScore > 0 ? 'positive' : state.botScore < 0 ? 'negative' : '');
+}
+
+function nextRound() {
+  document.getElementById('resultPanel').classList.remove('show');
+  document.getElementById('actionArea').style.display = 'flex';
+  dealRound();
+}
+
+function endGame() {
+  hideQuitModal();
+  document.getElementById('endHumanScore').textContent = state.humanScore;
+  document.getElementById('endBotScore').textContent   = state.botScore;
+
+  let trophy = '🤝', title = "It's a Draw!";
+  if (state.humanScore > state.botScore)      { trophy = '🏆'; title = 'You Win!'; }
+  else if (state.botScore > state.humanScore) { trophy = '🤖'; title = 'Bot Wins!'; }
+  document.getElementById('endTrophy').textContent = trophy;
+  document.getElementById('endTitle').textContent  = title;
+  document.getElementById('endSubtitle').textContent = `After ${state.round} round${state.round!==1?'s':''}`;
+
+  showScreen('end');
+}
+
+function backToSetup() { showScreen('setup'); }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showQuitModal() { document.getElementById('quitModal').classList.add('show'); }
+function hideQuitModal() { document.getElementById('quitModal').classList.remove('show'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
