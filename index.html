@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Finopoly Poker – Bot vs Human</title>
+<title>Finopoly Poker – Quant Edition</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -51,7 +51,7 @@
   }
   .header h1 {
     font-family: 'Playfair Display', serif;
-    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-size: clamp(1.8rem, 5vw, 3.5rem);
     font-weight: 900;
     color: var(--gold);
     text-shadow: 0 2px 12px rgba(201,168,76,0.4), 0 0 40px rgba(201,168,76,0.15);
@@ -84,7 +84,7 @@
     border-radius: 16px;
     padding: 32px;
     margin: 16px;
-    max-width: 600px;
+    max-width: 650px;
     width: calc(100% - 32px);
     backdrop-filter: blur(8px);
   }
@@ -125,28 +125,15 @@
     margin-bottom: 3px;
   }
 
-  .scoring-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.68rem;
-    margin-top: 8px;
-  }
-  .scoring-table th {
-    background: rgba(201,168,76,0.2);
-    color: var(--gold);
-    padding: 6px 8px;
-    text-align: left;
-    font-weight: 700;
-    letter-spacing: 1px;
-  }
-  .scoring-table td {
-    padding: 5px 8px;
-    border-bottom: 1px solid rgba(201,168,76,0.08);
+  .rules-text {
+    font-size: 0.75rem;
+    line-height: 1.6;
     color: rgba(245,237,224,0.8);
+    margin-bottom: 12px;
   }
-  .scoring-table tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
-  .pos { color: #2ecc71; font-weight: 700; }
-  .neg { color: #e74c3c; font-weight: 700; }
+  .rules-text strong { color: var(--gold); }
+  .rules-list { margin-left: 20px; font-size: 0.75rem; color: rgba(245,237,224,0.8); line-height: 1.6;}
+  .rules-list li { margin-bottom: 6px; }
 
   .rounds-selector {
     display: flex;
@@ -170,7 +157,7 @@
     font-family: 'Space Mono', monospace;
     font-size: 1.1rem;
     padding: 8px 16px;
-    width: 80px;
+    width: 100px;
     text-align: center;
   }
   .rounds-input:focus { outline: none; border-color: var(--gold-light); box-shadow: 0 0 12px rgba(201,168,76,0.3); }
@@ -194,6 +181,7 @@
   }
   .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(201,168,76,0.5); }
   .btn-gold:active { transform: translateY(0); }
+  .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
   #game {
     align-items: stretch;
@@ -214,7 +202,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-width: 80px;
+    min-width: 100px;
   }
   .score-label {
     font-size: 0.6rem;
@@ -224,13 +212,14 @@
   }
   .score-value {
     font-family: 'Playfair Display', serif;
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     font-weight: 700;
     color: var(--gold);
     line-height: 1;
   }
   .score-value.positive { color: #2ecc71; }
   .score-value.negative { color: #e74c3c; }
+  
   .round-info {
     font-size: 0.65rem;
     color: rgba(245,237,224,0.6);
@@ -248,11 +237,7 @@
     gap: 24px;
   }
 
-  .player-zone {
-    width: 100%;
-    max-width: 560px;
-  }
-
+  .player-zone { width: 100%; max-width: 560px; }
   .zone-label {
     font-size: 0.6rem;
     letter-spacing: 3px;
@@ -338,74 +323,42 @@
   .action-area {
     width: 100%;
     max-width: 560px;
+    background: rgba(15,45,31,0.8);
+    border: 1px solid var(--gold);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: 16px;
   }
-
-  .action-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
-    width: 100%;
-  }
-
-  .btn-action {
-    padding: 14px 8px;
-    border-radius: 12px;
-    font-family: 'Space Mono', monospace;
-    font-weight: 700;
-    font-size: 0.75rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: all 0.2s;
+  .bet-input-row {
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
-    gap: 4px;
+    gap: 12px;
+    flex-wrap: wrap;
   }
-  .btn-action:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
-  .btn-action .action-icon { font-size: 1.3rem; }
-  .btn-action .action-pts { font-size: 0.55rem; color: rgba(255,255,255,0.6); letter-spacing: 1px; font-weight: 400; }
-
-  .btn-fold {
-    background: rgba(192,57,43,0.2);
-    border-color: rgba(192,57,43,0.5);
-    color: #e74c3c;
-  }
-  .btn-fold:hover:not(:disabled) { background: rgba(192,57,43,0.4); border-color: #e74c3c; transform: translateY(-2px); }
-
-  .btn-call {
-    background: rgba(41,128,185,0.2);
-    border-color: rgba(41,128,185,0.5);
-    color: #3498db;
-  }
-  .btn-call:hover:not(:disabled) { background: rgba(41,128,185,0.4); border-color: #3498db; transform: translateY(-2px); }
-
-  .btn-raise {
-    background: rgba(201,168,76,0.2);
-    border-color: rgba(201,168,76,0.5);
+  .input-wrapper { position: relative; }
+  .input-wrapper::before {
+    content: '$';
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
     color: var(--gold);
+    font-weight: bold;
+    font-size: 1.1rem;
   }
-  .btn-raise:hover:not(:disabled) { background: rgba(201,168,76,0.4); border-color: var(--gold); transform: translateY(-2px); }
-
-  .btn-quit {
-    background: transparent;
-    border: 1px solid rgba(245,237,224,0.2);
-    color: rgba(245,237,224,0.4);
-    padding: 8px 20px;
-    border-radius: 8px;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .btn-quit:hover { border-color: rgba(245,237,224,0.5); color: rgba(245,237,224,0.7); }
+  #humanBetInput { padding-left: 28px; width: 140px; }
+  #humanBetInput:disabled { opacity: 0.5; }
+  .max-bet-label { font-size: 0.65rem; color: rgba(245,237,224,0.6); margin-top: 6px; display: block; }
+  
+  #mcProgressArea { display: none; flex-direction: column; gap: 8px; align-items: center; margin-top: 10px; }
+  .mc-title { font-size: 0.75rem; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
+  .progress-bar { width: 100%; max-width: 300px; height: 10px; background: rgba(0,0,0,0.5); border-radius: 10px; overflow: hidden; border: 1px solid rgba(201,168,76,0.3); }
+  .progress-fill { height: 100%; width: 100%; background: linear-gradient(90deg, var(--gold), #f39c12); transition: width 0.1s linear; }
+  .mc-stats { font-size: 0.8rem; color: var(--cream); font-family: monospace; }
 
   .result-panel {
     width: 100%;
@@ -434,32 +387,36 @@
   .result-headline.lose { color: #e74c3c; }
   .result-headline.tie { color: var(--gold); }
 
+  .bet-summary {
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 0.75rem;
+    margin: 10px 0;
+    color: var(--cream);
+  }
+  .bet-summary span { color: var(--gold); font-weight: bold; }
+
   .result-details {
     font-size: 0.7rem;
     color: rgba(245,237,224,0.6);
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     line-height: 1.8;
   }
   .result-details .hand-name { color: var(--cream); font-weight: 700; }
 
-  .bot-reveal {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin: 12px 0;
-    flex-wrap: wrap;
-  }
+  .bot-reveal { display: flex; justify-content: center; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
 
   .score-delta {
     display: flex;
     justify-content: center;
-    gap: 24px;
-    margin: 12px 0;
+    gap: 32px;
+    margin: 16px 0;
     font-size: 0.8rem;
   }
-  .delta-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .delta-label { font-size: 0.55rem; letter-spacing: 2px; color: rgba(245,237,224,0.4); }
-  .delta-val { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; }
+  .delta-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .delta-label { font-size: 0.55rem; letter-spacing: 2px; color: rgba(245,237,224,0.4); text-transform: uppercase;}
+  .delta-val { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; }
   .delta-val.pos { color: #2ecc71; }
   .delta-val.neg { color: #e74c3c; }
   .delta-val.zero { color: rgba(245,237,224,0.4); }
@@ -481,11 +438,7 @@
   }
   .btn-next:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(201,168,76,0.4); }
 
-  #end {
-    align-items: center;
-    justify-content: center;
-    padding: 40px 16px;
-  }
+  #end { align-items: center; justify-content: center; padding: 40px 16px; }
   .end-card {
     background: rgba(32,90,60,0.5);
     border: 1px solid rgba(201,168,76,0.4);
@@ -497,22 +450,12 @@
     backdrop-filter: blur(8px);
   }
   .end-trophy { font-size: 3.5rem; margin-bottom: 12px; }
-  .end-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 2rem;
-    color: var(--gold);
-    margin-bottom: 8px;
-  }
+  .end-title { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--gold); margin-bottom: 8px; }
   .end-subtitle { color: rgba(245,237,224,0.5); font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 28px; }
-  .end-scores {
-    display: flex;
-    justify-content: center;
-    gap: 32px;
-    margin-bottom: 28px;
-  }
+  .end-scores { display: flex; justify-content: center; gap: 32px; margin-bottom: 28px; }
   .end-score-block { display: flex; flex-direction: column; align-items: center; }
   .end-score-label { font-size: 0.6rem; letter-spacing: 2px; color: rgba(245,237,224,0.4); margin-bottom: 6px; }
-  .end-score-val { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 900; color: var(--gold); }
+  .end-score-val { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; color: var(--gold); }
 
   .toast {
     position: fixed;
@@ -532,32 +475,6 @@
   }
   .toast.show { transform: translateX(-50%) translateY(0); }
 
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-  }
-  .modal-overlay.show { display: flex; }
-  .modal-box {
-    background: #0f2d1f;
-    border: 1px solid var(--gold);
-    border-radius: 16px;
-    padding: 32px;
-    max-width: 360px;
-    width: 90%;
-    text-align: center;
-  }
-  .modal-box h3 { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 1.3rem; margin-bottom: 12px; }
-  .modal-box p { font-size: 0.75rem; color: rgba(245,237,224,0.6); margin-bottom: 24px; line-height: 1.7; }
-  .modal-buttons { display: flex; gap: 12px; justify-content: center; }
-  .btn-resume { background: transparent; border: 1px solid rgba(245,237,224,0.3); color: rgba(245,237,224,0.7); padding: 10px 20px; border-radius: 8px; font-family: 'Space Mono', monospace; font-size: 0.7rem; cursor: pointer; }
-  .btn-end-game { background: var(--red); border: none; color: white; padding: 10px 20px; border-radius: 8px; font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
-
-  /* Sound toggle button */
   .sound-toggle {
     position: fixed;
     top: 12px;
@@ -583,96 +500,80 @@
 </head>
 <body>
 
-<!-- Sound toggle -->
 <div class="sound-toggle" id="soundToggle" title="Toggle sound" onclick="toggleSound()">🔊</div>
 
-<!-- ── SETUP SCREEN ── -->
 <div id="setup" class="screen active">
   <div class="header">
-    <h1>♠ FINOPOLY POKER ♠</h1>
-    <div class="subtitle">Bot vs Human · 3-Card Edition</div>
+    <h1>♠ FINOPOLY QUANT ♠</h1>
+    <div class="subtitle">Prop Desk Operations</div>
     <div class="divider"></div>
+  </div>
+
+  <div class="setup-card">
+    <h2>📈 The Currency Rules</h2>
+    <p class="rules-text">Welcome to the Prop Desk. Both players start with <strong>$1,000</strong> in capital.</p>
+    <ul class="rules-list">
+      <li><strong>The Bet:</strong> Each round, you may wager any amount from $10 up to your current bankroll.</li>
+      <li><strong>Time Limit:</strong> You have exactly <strong>15 seconds</strong> per round to place your bet. If you do not commit in time, your current input (or the minimum ante) is automatically submitted.</li>
+      <li><strong>Showdown Mechanics:</strong> The winner takes the loser's wager. Profits are capped at the winner's own wager amount (Effective Risk / Liquidity Matching). </li>
+      <li><strong>Mandatory Ante:</strong> A minimum bet of <strong>$10</strong> is required every round.</li>
+      <li><strong>Margin Call:</strong> If either player's bankroll hits $0, they are liquidated.</li>
+    </ul>
   </div>
 
   <div class="setup-card">
     <h2>📋 Hand Rankings <span style="font-size:0.7rem;color:rgba(245,237,224,0.4);font-family:'Space Mono',monospace;">(highest → lowest)</span></h2>
     <div class="rules-grid">
-      <div class="rule-item"><span class="rank">① Straight Flush</span>3 same-suit sequential cards. Tie: higher top card wins. A-2-3 is lowest.</div>
+      <div class="rule-item"><span class="rank">① Straight Flush</span>3 same-suit sequential cards. Tie: higher top card. A-2-3 is lowest.</div>
       <div class="rule-item"><span class="rank">② Three of a Kind</span>3 cards of same rank. Tie: higher rank wins.</div>
-      <div class="rule-item"><span class="rank">③ Straight</span>3 sequential cards, mixed suits. Tie: higher top card wins.</div>
-      <div class="rule-item"><span class="rank">④ Flush</span>3 same-suit cards, not sequential. Tie: compare cards top-down.</div>
-      <div class="rule-item"><span class="rank">⑤ Pair</span>2 cards same rank + kicker. Tie: higher pair, then higher kicker.</div>
+      <div class="rule-item"><span class="rank">③ Straight</span>3 sequential cards, mixed suits. Tie: higher top card.</div>
+      <div class="rule-item"><span class="rank">④ Flush</span>3 same-suit cards, not sequential. Tie: top-down.</div>
+      <div class="rule-item"><span class="rank">⑤ Pair</span>2 cards same rank + kicker. Tie: pair, then kicker.</div>
       <div class="rule-item"><span class="rank">⑥ High Card</span>None of the above. Tie: compare cards top-down.</div>
     </div>
-  </div>
-
-  <div class="setup-card">
-    <h2>🎲 Scoring Table</h2>
-    <table class="scoring-table">
-      <tr><th>You</th><th>Bot</th><th>Outcome</th><th>Your Pts</th><th>Bot Pts</th></tr>
-      <tr><td>FOLD</td><td>FOLD</td><td>Both forfeit</td><td class="zero">0</td><td class="zero">0</td></tr>
-      <tr><td>CALL</td><td>FOLD</td><td>Bot forfeits, you win</td><td class="pos">+2</td><td class="neg">−1</td></tr>
-      <tr><td>FOLD</td><td>CALL/RAISE</td><td>You forfeit, bot wins</td><td class="neg">−1</td><td class="pos">+2/3</td></tr>
-      <tr><td>RAISE</td><td>FOLD</td><td>Bot forfeits, you win</td><td class="pos">+3</td><td class="neg">−1</td></tr>
-      <tr><td>CALL</td><td>CALL</td><td>Showdown (winner ±2)</td><td>±2</td><td>±2</td></tr>
-      <tr><td>RAISE</td><td>CALL</td><td>You win +3, lose −3</td><td>±3</td><td>±2</td></tr>
-      <tr><td>CALL</td><td>RAISE</td><td>You win +2, lose −2</td><td>±2</td><td>±3</td></tr>
-      <tr><td>RAISE</td><td>RAISE</td><td>High-risk showdown ±3</td><td>±3</td><td>±3</td></tr>
-    </table>
   </div>
 
   <div class="setup-card" style="text-align:center;">
     <h2 style="justify-content:center;">⚙️ Game Setup</h2>
     <div class="rounds-selector">
-      <label>Number of Rounds:</label>
+      <label>Max Rounds (Ends early if bankrupt):</label>
       <input type="number" class="rounds-input" id="roundsInput" value="10" min="1" max="100">
     </div>
-    <button class="btn btn-gold" onclick="playClick(); startGame()">Deal Me In ♠</button>
+    <button class="btn btn-gold" onclick="playClick(); startGame()">Initialize Capital ♠</button>
   </div>
 </div>
 
-<!-- ── GAME SCREEN ── -->
 <div id="game" class="screen">
   <div class="scoreboard">
     <div class="score-block">
-      <div class="score-label">You</div>
-      <div class="score-value" id="humanScore">0</div>
+      <div class="score-label">Your Capital</div>
+      <div class="score-value" id="humanScore">$1,000</div>
     </div>
     <div class="round-info">
       Round <strong id="roundNum">1</strong> of <strong id="totalRounds">10</strong>
-      <br><span id="roundStatus">Make your move</span>
+      <br><span id="roundStatus">Place your wager</span>
     </div>
     <div class="score-block">
-      <div class="score-label">Bot</div>
-      <div class="score-value" id="botScore">0</div>
+      <div class="score-label">Bot Capital</div>
+      <div class="score-value" id="botScore">$1,000</div>
     </div>
   </div>
 
   <div class="table-area">
-    <!-- BOT ZONE -->
     <div class="player-zone">
-      <div class="zone-label">🤖 Bot's Hand (hidden)</div>
+      <div class="zone-label">🤖 Opponent (Hidden)</div>
       <div class="cards-row">
         <div class="card hidden-card" id="botCard1">
-          <div class="hidden-pattern">
-            <span></span><span></span><span></span>
-            <span></span><span></span><span></span>
-            <span></span><span></span><span></span>
-          </div>
+          <div class="hidden-pattern"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
         </div>
         <div class="card hidden-card" id="botCard2">
-          <div class="hidden-pattern">
-            <span></span><span></span><span></span>
-            <span></span><span></span><span></span>
-            <span></span><span></span><span></span>
-          </div>
+          <div class="hidden-pattern"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
         </div>
       </div>
     </div>
 
-    <!-- COMMUNITY CARD -->
     <div class="community-area">
-      <div class="community-label">⟡ Community Card ⟡</div>
+      <div class="community-label">⟡ Market Indicator (Community) ⟡</div>
       <div class="card community-card revealed" id="communityCard">
         <div class="card-corner"><div class="card-rank" id="commRank">?</div><div class="card-suit" id="commSuit">?</div></div>
         <div class="card-center" id="commCenter">?</div>
@@ -680,9 +581,8 @@
       </div>
     </div>
 
-    <!-- HUMAN ZONE -->
     <div class="player-zone">
-      <div class="zone-label">🧑 Your Hand</div>
+      <div class="zone-label">🧑 Your Portfolio</div>
       <div class="cards-row">
         <div class="card revealed" id="humanCard1">
           <div class="card-corner"><div class="card-rank" id="h1Rank">A</div><div class="card-suit" id="h1Suit">♠</div></div>
@@ -697,84 +597,66 @@
       </div>
     </div>
 
-    <!-- RESULT PANEL -->
+    <div class="action-area" id="actionArea">
+      <div id="bettingInputArea">
+        <div class="bet-input-row">
+          <div class="input-wrapper">
+            <input type="number" class="rounds-input" id="humanBetInput" min="10" placeholder="10">
+          </div>
+          <button class="btn btn-gold" id="placeBetBtn" onclick="playClick(); executeWager()">Commit Capital</button>
+        </div>
+        <span class="max-bet-label">Max Available: <strong style="color:var(--gold)" id="maxBetLabel">$1000</strong> (Min Ante: $10)</span>
+      </div>
+      
+      <div id="mcProgressArea">
+        <div class="mc-title">Round Timer</div>
+        <div class="progress-bar"><div class="progress-fill" id="mcFill"></div></div>
+        <div class="mc-stats"><span id="mcTime">15</span>s remaining</div>
+      </div>
+    </div>
+
     <div class="result-panel" id="resultPanel">
       <div class="result-headline" id="resultHeadline">—</div>
+      <div class="bet-summary" id="betSummary"></div>
       <div class="result-details" id="resultDetails"></div>
       <div class="bot-reveal" id="botReveal"></div>
       <div class="score-delta">
-        <div class="delta-item"><div class="delta-label">You</div><div class="delta-val" id="deltaHuman">0</div></div>
-        <div class="delta-item"><div class="delta-label">Bot</div><div class="delta-val" id="deltaBot">0</div></div>
+        <div class="delta-item"><div class="delta-label">Equity Change</div><div class="delta-val" id="deltaHuman">$0</div></div>
+        <div class="delta-item"><div class="delta-label">Bot Equity Change</div><div class="delta-val" id="deltaBot">$0</div></div>
       </div>
       <button class="btn-next" id="nextBtn" onclick="playClick(); nextRound()">Next Round →</button>
-    </div>
-
-    <!-- ACTION AREA -->
-    <div class="action-area" id="actionArea">
-      <div class="action-buttons">
-        <button class="btn-action btn-fold" onclick="playClick(); playerAction('FOLD')">
-          <span class="action-icon">🏳️</span>
-          FOLD
-          <span class="action-pts">−1 if opp. stays</span>
-        </button>
-        <button class="btn-action btn-call" onclick="playClick(); playerAction('CALL')">
-          <span class="action-icon">📞</span>
-          CALL
-          <span class="action-pts">±2 on showdown</span>
-        </button>
-        <button class="btn-action btn-raise" onclick="playClick(); playerAction('RAISE')">
-          <span class="action-icon">🔥</span>
-          RAISE
-          <span class="action-pts">±3 high risk</span>
-        </button>
-      </div>
-      <button class="btn-quit" onclick="playClick(); showQuitModal()">Quit Game</button>
     </div>
   </div>
 </div>
 
-<!-- ── END SCREEN ── -->
 <div id="end" class="screen">
   <div class="header">
-    <h1>♠ FINOPOLY POKER ♠</h1>
+    <h1>♠ FINOPOLY QUANT ♠</h1>
     <div class="divider"></div>
   </div>
   <div class="end-card">
     <div class="end-trophy" id="endTrophy">🏆</div>
-    <div class="end-title" id="endTitle">Game Over</div>
-    <div class="end-subtitle" id="endSubtitle">FINAL STANDINGS</div>
+    <div class="end-title" id="endTitle">Trading Ceased</div>
+    <div class="end-subtitle" id="endSubtitle">FINAL PORTFOLIO VALUE</div>
     <div class="end-scores">
       <div class="end-score-block">
-        <div class="end-score-label">YOU</div>
-        <div class="end-score-val" id="endHumanScore">0</div>
+        <div class="end-score-label">YOUR CAPITAL</div>
+        <div class="end-score-val" id="endHumanScore">$0</div>
       </div>
       <div class="end-score-block">
-        <div class="end-score-label">BOT</div>
-        <div class="end-score-val" id="endBotScore">0</div>
+        <div class="end-score-label">BOT CAPITAL</div>
+        <div class="end-score-val" id="endBotScore">$0</div>
       </div>
     </div>
-    <button class="btn btn-gold" onclick="playClick(); backToSetup()" style="width:100%;">Play Again ↩</button>
+    <button class="btn btn-gold" onclick="playClick(); backToSetup()" style="width:100%;">New Session ↩</button>
   </div>
 </div>
 
-<!-- QUIT MODAL -->
-<div class="modal-overlay" id="quitModal">
-  <div class="modal-box">
-    <h3>Quit Game?</h3>
-    <p>Your current scores will be shown as the final result. Are you sure you want to end the match?</p>
-    <div class="modal-buttons">
-      <button class="btn-resume" onclick="playClick(); hideQuitModal()">Resume</button>
-      <button class="btn-end-game" onclick="playClick(); endGame()">End Game</button>
-    </div>
-  </div>
-</div>
-
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
 // ─────────────────────────────────────────────
-// AUDIO ENGINE — Web Audio API, no file deps
+// AUDIO ENGINE 
 // ─────────────────────────────────────────────
 let audioCtx = null;
 let soundEnabled = true;
@@ -784,161 +666,35 @@ function getAudioCtx() {
   if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
-
 function toggleSound() {
   soundEnabled = !soundEnabled;
   const btn = document.getElementById('soundToggle');
   btn.textContent = soundEnabled ? '🔊' : '🔇';
   btn.classList.toggle('muted', !soundEnabled);
 }
-
-// Short, snappy click — soft high-pitched tick
 function playClick() {
   if (!soundEnabled) return;
-  try {
-    const ctx = getAudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(900, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.04);
-    gain.gain.setValueAtTime(0.18, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.07);
-  } catch(e) {}
+  try { const ctx = getAudioCtx(); const osc = ctx.createOscillator(); const gain = ctx.createGain(); osc.connect(gain); gain.connect(ctx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(900, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.04); gain.gain.setValueAtTime(0.18, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07); osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.07); } catch(e) {}
 }
-
-// Win sound — bright rising chime arpeggio
 function playWin() {
   if (!soundEnabled) return;
-  try {
-    const ctx = getAudioCtx();
-    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5 E5 G5 C6
-    notes.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = 'triangle';
-      const t = ctx.currentTime + i * 0.1;
-      osc.frequency.setValueAtTime(freq, t);
-      gain.gain.setValueAtTime(0.0, t);
-      gain.gain.linearRampToValueAtTime(0.22, t + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
-      osc.start(t);
-      osc.stop(t + 0.35);
-    });
-  } catch(e) {}
+  try { const ctx = getAudioCtx(); const notes = [523.25, 659.25, 783.99, 1046.50]; notes.forEach((freq, i) => { const osc = ctx.createOscillator(); const gain = ctx.createGain(); osc.connect(gain); gain.connect(ctx.destination); osc.type = 'triangle'; const t = ctx.currentTime + i * 0.1; osc.frequency.setValueAtTime(freq, t); gain.gain.setValueAtTime(0.0, t); gain.gain.linearRampToValueAtTime(0.22, t + 0.03); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35); osc.start(t); osc.stop(t + 0.35); }); } catch(e) {}
 }
-
-// Loss / "FAAAH" sound — descending buzzy trombone slur
 function playLoss() {
   if (!soundEnabled) return;
-  try {
-    const ctx = getAudioCtx();
-
-    // Main trombone-slide oscillator
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const dist = ctx.createWaveShaper();
-
-    // Mild distortion for brassy buzz
-    const curve = new Float32Array(256);
-    for (let i = 0; i < 256; i++) {
-      const x = (i * 2) / 256 - 1;
-      curve[i] = (Math.PI + 200) * x / (Math.PI + 200 * Math.abs(x));
-    }
-    dist.curve = curve;
-
-    osc.connect(dist);
-    dist.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.type = 'sawtooth';
-    const t = ctx.currentTime;
-    // Classic "wah-waaah" descending pitch
-    osc.frequency.setValueAtTime(370, t);
-    osc.frequency.setValueAtTime(370, t + 0.08);
-    osc.frequency.exponentialRampToValueAtTime(220, t + 0.22);
-    osc.frequency.exponentialRampToValueAtTime(155, t + 0.55);
-    osc.frequency.exponentialRampToValueAtTime(110, t + 0.85);
-
-    gain.gain.setValueAtTime(0.0, t);
-    gain.gain.linearRampToValueAtTime(0.3, t + 0.06);
-    gain.gain.setValueAtTime(0.28, t + 0.22);
-    gain.gain.linearRampToValueAtTime(0.18, t + 0.55);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.95);
-
-    osc.start(t);
-    osc.stop(t + 0.95);
-
-    // Second harmonic for extra buzz
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-    osc2.type = 'sawtooth';
-    osc2.frequency.setValueAtTime(185, t);
-    osc2.frequency.exponentialRampToValueAtTime(78, t + 0.85);
-    gain2.gain.setValueAtTime(0.0, t);
-    gain2.gain.linearRampToValueAtTime(0.12, t + 0.06);
-    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
-    osc2.start(t);
-    osc2.stop(t + 0.9);
-  } catch(e) {}
+  try { const ctx = getAudioCtx(); const osc = ctx.createOscillator(); const gain = ctx.createGain(); const dist = ctx.createWaveShaper(); const curve = new Float32Array(256); for (let i=0; i<256; i++) { const x = (i*2)/256-1; curve[i] = (Math.PI+200)*x/(Math.PI+200*Math.abs(x)); } dist.curve = curve; osc.connect(dist); dist.connect(gain); gain.connect(ctx.destination); osc.type = 'sawtooth'; const t = ctx.currentTime; osc.frequency.setValueAtTime(370, t); osc.frequency.setValueAtTime(370, t + 0.08); osc.frequency.exponentialRampToValueAtTime(220, t + 0.22); osc.frequency.exponentialRampToValueAtTime(155, t + 0.55); osc.frequency.exponentialRampToValueAtTime(110, t + 0.85); gain.gain.setValueAtTime(0.0, t); gain.gain.linearRampToValueAtTime(0.3, t + 0.06); gain.gain.setValueAtTime(0.28, t + 0.22); gain.gain.linearRampToValueAtTime(0.18, t + 0.55); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.95); osc.start(t); osc.stop(t + 0.95); } catch(e) {}
 }
-
-// Card deal sound — light soft thud
 function playDeal() {
   if (!soundEnabled) return;
-  try {
-    const ctx = getAudioCtx();
-    const bufSize = ctx.sampleRate * 0.06;
-    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < bufSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufSize, 3) * 0.4;
-    }
-    const src = ctx.createBufferSource();
-    const gain = ctx.createGain();
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = 600;
-    src.buffer = buf;
-    src.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    gain.gain.setValueAtTime(0.7, ctx.currentTime);
-    src.start(ctx.currentTime);
-  } catch(e) {}
+  try { const ctx = getAudioCtx(); const bufSize = ctx.sampleRate * 0.06; const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate); const data = buf.getChannelData(0); for (let i=0; i<bufSize; i++) { data[i] = (Math.random()*2-1) * Math.pow(1 - i/bufSize, 3) * 0.4; } const src = ctx.createBufferSource(); const gain = ctx.createGain(); const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 600; src.buffer = buf; src.connect(filter); filter.connect(gain); gain.connect(ctx.destination); gain.gain.setValueAtTime(0.7, ctx.currentTime); src.start(ctx.currentTime); } catch(e) {}
 }
-
-// Tie sound — neutral two-tone
 function playTie() {
   if (!soundEnabled) return;
-  try {
-    const ctx = getAudioCtx();
-    [440, 440].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = 'sine';
-      const t = ctx.currentTime + i * 0.18;
-      osc.frequency.setValueAtTime(freq, t);
-      gain.gain.setValueAtTime(0.15, t);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
-      osc.start(t);
-      osc.stop(t + 0.22);
-    });
-  } catch(e) {}
+  try { const ctx = getAudioCtx(); [440, 440].forEach((freq, i) => { const osc = ctx.createOscillator(); const gain = ctx.createGain(); osc.connect(gain); gain.connect(ctx.destination); osc.type = 'sine'; const t = ctx.currentTime + i * 0.18; osc.frequency.setValueAtTime(freq, t); gain.gain.setValueAtTime(0.15, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22); osc.start(t); osc.stop(t + 0.22); }); } catch(e) {}
 }
 
 // ─────────────────────────────────────────────
-// CARD ENGINE (mirrors final_bot.py logic)
+// CARD ENGINE 
 // ─────────────────────────────────────────────
 const RANKS = "23456789TJQKA";
 const SUITS = "SHDC";
@@ -1003,52 +759,12 @@ function compareHands(h1, h2) {
 }
 
 // ─────────────────────────────────────────────
-// BOT LOGIC
-// ─────────────────────────────────────────────
-function botGetHighCardAction(hole, tableCard) {
-  const tableRank = RANK_VALUE[tableCard[0]];
-  const holeRanks = hole.map(c => RANK_VALUE[c[0]]);
-  const maxHole = Math.max(...holeRanks);
-
-  if (tableRank === 14) { return maxHole >= 12 ? 'RAISE' : maxHole >= 9 ? 'CALL' : 'FOLD'; }
-  if (tableRank === 13) { return maxHole >= 12 ? 'RAISE' : maxHole >= 9 ? 'CALL' : 'FOLD'; }
-  if (tableRank === 12) { return maxHole >= 13 ? 'RAISE' : maxHole >= 9 ? 'CALL' : 'FOLD'; }
-  if (tableRank === 11) { return maxHole >= 13 ? 'RAISE' : maxHole >= 9 ? 'CALL' : 'FOLD'; }
-  if (tableRank === 10) { return maxHole >= 13 ? 'RAISE' : maxHole >= 9 ? 'CALL' : 'FOLD'; }
-  if (tableRank === 9)  { return maxHole >= 13 ? 'RAISE' : maxHole >= 10 ? 'CALL' : 'FOLD'; }
-  if (tableRank >= 5)   { return maxHole >= 13 ? 'RAISE' : maxHole >= 11 ? 'CALL' : 'FOLD'; }
-  return maxHole >= 13 ? 'RAISE' : maxHole >= 10 ? 'CALL' : 'FOLD';
-}
-
-function botDecide(hole, tableCard) {
-  const allCards = [...hole, tableCard];
-  const ev = evaluateHand(allCards);
-  if (ev.cat >= 1) return 'RAISE';
-  return botGetHighCardAction(hole, tableCard);
-}
-
-// ─────────────────────────────────────────────
-// SCORING
-// ─────────────────────────────────────────────
-function calculateScore(act1, act2, winner) {
-  if (act1 === 'FOLD' && act2 === 'FOLD') return [0, 0];
-  if (act1 === 'FOLD') return [-1, act2 === 'CALL' ? 2 : 3];
-  if (act2 === 'FOLD') return [act1 === 'CALL' ? 2 : 3, -1];
-  if (winner === 0) return [0, 0];
-  const wm = winner === 1 ? 1 : -1;
-  if (act1 === 'CALL' && act2 === 'CALL') return [2*wm, -2*wm];
-  if (act1 === 'RAISE' && act2 === 'RAISE') return [3*wm, -3*wm];
-  if (act1 === 'RAISE' && act2 === 'CALL') return winner===1 ? [3,-2] : [-3,2];
-  if (act1 === 'CALL'  && act2 === 'RAISE') return winner===1 ? [2,-3] : [-2,3];
-  return [0, 0];
-}
-
-// ─────────────────────────────────────────────
 // GAME STATE
 // ─────────────────────────────────────────────
+const STARTING_CAPITAL = 1000;
 let state = {
-  humanScore: 0,
-  botScore: 0,
+  humanScore: STARTING_CAPITAL,
+  botScore: STARTING_CAPITAL,
   round: 0,
   totalRounds: 10,
   humanHole: [],
@@ -1056,14 +772,62 @@ let state = {
   community: '',
   humanEv: null,
   botEv: null,
-  roundDone: false
+  humanBet: 0,
+  botBet: 0,
+  userCommitted: false
 };
 
+const formatCurr = (num) => '$' + Math.floor(num).toLocaleString();
+
+// ─────────────────────────────────────────────
+// ASYNC MONTE CARLO SIMULATION
+// ─────────────────────────────────────────────
+function runMonteCarloAsync(botHole, community, durationMs, progressCb) {
+  return new Promise(resolve => {
+    let wins = 0;
+    let trials = 0;
+    const startTime = performance.now();
+    const fullDeck = getDeck();
+    const knownCards = [...botHole, community];
+    const deck = fullDeck.filter(c => !knownCards.includes(c));
+    const botEv = evaluateHand([...botHole, community]);
+
+    function chunk() {
+      const now = performance.now();
+      const elapsed = now - startTime;
+      
+      if (elapsed >= durationMs) {
+        resolve(trials === 0 ? 0 : wins / trials);
+        return;
+      }
+
+      for(let i=0; i<8000; i++) {
+        const r1 = Math.floor(Math.random() * deck.length);
+        let r2 = Math.floor(Math.random() * deck.length);
+        while(r2 === r1) r2 = Math.floor(Math.random() * deck.length);
+
+        const humanEv = evaluateHand([[deck[r1], deck[r2]][0], [deck[r1], deck[r2]][1], community]);
+        const cmp = compareHands(botEv, humanEv);
+        if (cmp === 1) wins++;
+        else if (cmp === 0) wins += 0.5;
+        trials++;
+      }
+
+      if (progressCb) progressCb(elapsed / durationMs, trials, durationMs - elapsed);
+      requestAnimationFrame(chunk);
+    }
+    chunk();
+  });
+}
+
+// ─────────────────────────────────────────────
+// MAIN GAME LOOP
+// ─────────────────────────────────────────────
 function startGame() {
   const n = parseInt(document.getElementById('roundsInput').value);
   if (isNaN(n) || n < 1) { showToast('Please enter a valid round count'); return; }
-  state.humanScore = 0;
-  state.botScore = 0;
+  state.humanScore = STARTING_CAPITAL;
+  state.botScore = STARTING_CAPITAL;
   state.round = 0;
   state.totalRounds = n;
   showScreen('game');
@@ -1072,11 +836,10 @@ function startGame() {
 
 function dealRound() {
   state.round++;
-  state.roundDone = false;
-
+  state.userCommitted = false;
+  
   document.getElementById('roundNum').textContent = state.round;
   document.getElementById('totalRounds').textContent = state.totalRounds;
-  document.getElementById('roundStatus').textContent = 'Make your move';
   updateScoreDisplay();
 
   const deck = shuffle(getDeck());
@@ -1100,7 +863,120 @@ function dealRound() {
 
   document.getElementById('resultPanel').classList.remove('show');
   document.getElementById('actionArea').style.display = 'flex';
-  setActionButtonsEnabled(true);
+  
+  // Show input and progress simultaneously
+  document.getElementById('bettingInputArea').style.display = 'block';
+  document.getElementById('mcProgressArea').style.display = 'flex';
+  
+  const hInput = document.getElementById('humanBetInput');
+  hInput.value = '';
+  hInput.disabled = false;
+  hInput.max = Math.floor(state.humanScore);
+  
+  const btn = document.getElementById('placeBetBtn');
+  btn.disabled = false;
+  btn.textContent = 'Commit Capital';
+  document.getElementById('maxBetLabel').textContent = formatCurr(state.humanScore);
+  
+  // Start 15s timer immediately
+  const simTimeMs = 15000; 
+  runMonteCarloAsync(state.botHole, state.community, simTimeMs, (perc, trials, msLeft) => {
+    // Shrink the bar down over 15 seconds
+    document.getElementById('mcFill').style.width = `${(1 - perc) * 100}%`;
+    document.getElementById('mcTime').textContent = Math.ceil(msLeft / 1000);
+  }).then(p => {
+    
+    // Auto-commit if user hasn't clicked
+    if (!state.userCommitted) {
+      const rawBet = parseInt(document.getElementById('humanBetInput').value);
+      let humanBet = isNaN(rawBet) ? 10 : rawBet;
+      if (humanBet < 10) humanBet = 10;
+      if (humanBet > state.humanScore) humanBet = Math.floor(state.humanScore);
+      state.humanBet = humanBet;
+      state.userCommitted = true;
+    }
+
+    const fFull = (2 * p) - 1;
+    const fHalf = fFull / 2;
+    
+    if (fHalf <= 0) {
+      // Disguise Negative EV (Random Bluff)
+      const maxBluff = Math.min(50, state.botScore);
+      const minBluff = Math.min(10, state.botScore);
+      state.botBet = Math.floor(Math.random() * (maxBluff - minBluff + 1)) + minBluff;
+    } else {
+      // Positive EV
+      state.botBet = Math.max(10, Math.floor(state.botScore * fHalf));
+    }
+    
+    resolveRound();
+  });
+}
+
+function executeWager() {
+  const rawBet = parseInt(document.getElementById('humanBetInput').value);
+  const humanBet = isNaN(rawBet) ? 0 : rawBet;
+  const MIN_BET = 10; 
+
+  if (humanBet < MIN_BET || humanBet > state.humanScore) {
+    showToast(`Minimum bet is $${MIN_BET}. Max is ${formatCurr(state.humanScore)}`);
+    return;
+  }
+  
+  state.humanBet = humanBet;
+  state.userCommitted = true;
+  
+  // Lock UI while waiting for round timer to finish
+  document.getElementById('humanBetInput').disabled = true;
+  const btn = document.getElementById('placeBetBtn');
+  btn.disabled = true;
+  btn.textContent = 'Committed (Waiting...)';
+}
+
+function resolveRound() {
+  document.getElementById('actionArea').style.display = 'none';
+
+  const winner = compareHands(state.humanEv, state.botEv);
+  const matchedBet = Math.min(state.humanBet, state.botBet);
+  
+  let dHuman = 0, dBot = 0;
+  
+  if (state.humanBet === 0 && state.botBet === 0) {
+    // Both folded
+  } else if (state.humanBet === 0) {
+    dHuman = 0; dBot = 0;
+  } else if (state.botBet === 0) {
+    dHuman = 0; dBot = 0;
+  } else {
+    if (winner === 1) {
+      dHuman = +matchedBet;
+      dBot = -matchedBet;
+    } else if (winner === -1) {
+      dHuman = -matchedBet;
+      dBot = +matchedBet;
+    }
+  }
+
+  state.humanScore += dHuman;
+  state.botScore   += dBot;
+
+  if (dHuman > 0) playWin();
+  else if (dHuman < 0) playLoss();
+  else playTie();
+
+  revealBotCard(state.botHole[0], 'botCard1');
+  revealBotCard(state.botHole[1], 'botCard2');
+
+  showResult(winner, dHuman, dBot, matchedBet);
+  updateScoreDisplay();
+
+  if (state.humanScore <= 0 || state.botScore <= 0 || state.round >= state.totalRounds) {
+    document.getElementById('nextBtn').textContent = 'Final Liquidation Report →';
+    document.getElementById('nextBtn').onclick = () => { playClick(); endGame(); };
+  } else {
+    document.getElementById('nextBtn').textContent = 'Next Trading Round →';
+    document.getElementById('nextBtn').onclick = () => { playClick(); dealRound(); };
+  }
 }
 
 function renderCard(raw, rankId, suitId, centerId, rankBId, suitBId, cardId) {
@@ -1132,47 +1008,6 @@ function renderSmallCard(raw) {
   </div>`;
 }
 
-function setActionButtonsEnabled(on) {
-  document.querySelectorAll('.btn-action').forEach(b => b.disabled = !on);
-}
-
-function playerAction(humanAct) {
-  if (state.roundDone) return;
-  state.roundDone = true;
-  setActionButtonsEnabled(false);
-  document.getElementById('actionArea').style.display = 'none';
-
-  const botAct = botDecide(state.botHole, state.community);
-  const winner = compareHands(state.humanEv, state.botEv);
-  const [dHuman, dBot] = calculateScore(humanAct, botAct, winner);
-
-  state.humanScore += dHuman;
-  state.botScore   += dBot;
-
-  // Play outcome sound
-  if (dHuman > 0) {
-    playWin();
-  } else if (dHuman < 0) {
-    playLoss();
-  } else {
-    playTie();
-  }
-
-  revealBotCard(state.botHole[0], 'botCard1');
-  revealBotCard(state.botHole[1], 'botCard2');
-
-  showResult(humanAct, botAct, winner, dHuman, dBot);
-  updateScoreDisplay();
-
-  if (state.round >= state.totalRounds) {
-    document.getElementById('nextBtn').textContent = 'See Final Results →';
-    document.getElementById('nextBtn').onclick = () => { playClick(); endGame(); };
-  } else {
-    document.getElementById('nextBtn').textContent = 'Next Round →';
-    document.getElementById('nextBtn').onclick = () => { playClick(); nextRound(); };
-  }
-}
-
 function revealBotCard(raw, cardId) {
   const r = raw[0], s = raw[1];
   const rDisp = rankDisplay(r);
@@ -1187,35 +1022,40 @@ function revealBotCard(raw, cardId) {
   `;
 }
 
-function showResult(humanAct, botAct, winner, dHuman, dBot) {
+function showResult(winner, dHuman, dBot, matchedBet) {
   const panel = document.getElementById('resultPanel');
   const headline = document.getElementById('resultHeadline');
+  const summary  = document.getElementById('betSummary');
   const details  = document.getElementById('resultDetails');
   const botReveal = document.getElementById('botReveal');
 
   let headText = '', headClass = '';
-  if (humanAct === 'FOLD' && botAct === 'FOLD') { headText = 'Both Folded'; headClass = 'tie'; }
-  else if (humanAct === 'FOLD') { headText = 'You Folded'; headClass = 'lose'; }
-  else if (botAct === 'FOLD')   { headText = 'Bot Folded — You Win!'; headClass = 'win'; }
-  else if (winner === 1)  { headText = '🏆 You Win!'; headClass = 'win'; }
-  else if (winner === -1) { headText = '🤖 Bot Wins'; headClass = 'lose'; }
-  else { headText = '🤝 Tie'; headClass = 'tie'; }
+  if (state.humanBet === 0 && state.botBet === 0) { headText = 'No Liquidity (Both Folded)'; headClass = 'tie'; }
+  else if (state.humanBet === 0) { headText = 'You Folded'; headClass = 'lose'; }
+  else if (state.botBet === 0)   { headText = 'Bot Folded'; headClass = 'win'; }
+  else if (winner === 1)  { headText = '💰 Alpha Generated!'; headClass = 'win'; }
+  else if (winner === -1) { headText = '📉 Trade Loss'; headClass = 'lose'; }
+  else { headText = '🤝 Market Neutral (Tie)'; headClass = 'tie'; }
 
   headline.textContent = headText;
   headline.className = 'result-headline ' + headClass;
 
+  summary.innerHTML = `You wagered: <span>${formatCurr(state.humanBet)}</span> | Bot wagered: <span>${formatCurr(state.botBet)}</span><br>
+                       Effective Risk (Matched Pot): <span>${formatCurr(matchedBet)}</span>`;
+
   botReveal.innerHTML = state.botHole.map(c => renderSmallCard(c)).join('');
 
   details.innerHTML = `
-    You <strong style="color:var(--gold)">${humanAct}</strong> · Bot <strong style="color:var(--gold)">${botAct}</strong><br>
-    Your hand: <span class="hand-name">${state.humanEv.name}</span> · Bot hand: <span class="hand-name">${state.botEv.name}</span>
+    Your hand: <span class="hand-name">${state.humanEv.name}</span> <br> Bot hand: <span class="hand-name">${state.botEv.name}</span>
   `;
 
   const dh = document.getElementById('deltaHuman');
   const db = document.getElementById('deltaBot');
-  dh.textContent = (dHuman > 0 ? '+' : '') + dHuman;
+  
+  dh.textContent = (dHuman > 0 ? '+' : '') + formatCurr(dHuman);
   dh.className   = 'delta-val ' + (dHuman > 0 ? 'pos' : dHuman < 0 ? 'neg' : 'zero');
-  db.textContent = (dBot > 0 ? '+' : '') + dBot;
+  
+  db.textContent = (dBot > 0 ? '+' : '') + formatCurr(dBot);
   db.className   = 'delta-val ' + (dBot > 0 ? 'pos' : dBot < 0 ? 'neg' : 'zero');
 
   panel.classList.add('show');
@@ -1224,29 +1064,25 @@ function showResult(humanAct, botAct, winner, dHuman, dBot) {
 function updateScoreDisplay() {
   const hs = document.getElementById('humanScore');
   const bs = document.getElementById('botScore');
-  hs.textContent = state.humanScore;
-  bs.textContent = state.botScore;
-  hs.className = 'score-value ' + (state.humanScore > 0 ? 'positive' : state.humanScore < 0 ? 'negative' : '');
-  bs.className = 'score-value ' + (state.botScore > 0 ? 'positive' : state.botScore < 0 ? 'negative' : '');
-}
-
-function nextRound() {
-  document.getElementById('resultPanel').classList.remove('show');
-  document.getElementById('actionArea').style.display = 'flex';
-  dealRound();
+  hs.textContent = formatCurr(state.humanScore);
+  bs.textContent = formatCurr(state.botScore);
+  hs.className = 'score-value ' + (state.humanScore > STARTING_CAPITAL ? 'positive' : state.humanScore < STARTING_CAPITAL ? 'negative' : '');
+  bs.className = 'score-value ' + (state.botScore > STARTING_CAPITAL ? 'positive' : state.botScore < STARTING_CAPITAL ? 'negative' : '');
 }
 
 function endGame() {
-  hideQuitModal();
-  document.getElementById('endHumanScore').textContent = state.humanScore;
-  document.getElementById('endBotScore').textContent   = state.botScore;
+  document.getElementById('endHumanScore').textContent = formatCurr(state.humanScore);
+  document.getElementById('endBotScore').textContent   = formatCurr(state.botScore);
 
-  let trophy = '🤝', title = "It's a Draw!";
-  if (state.humanScore > state.botScore)      { trophy = '🏆'; title = 'You Win!'; }
-  else if (state.botScore > state.humanScore) { trophy = '🤖'; title = 'Bot Wins!'; }
+  let trophy = '⚖️', title = "Market Closed";
+  if (state.humanScore <= 0) { trophy = '☠️'; title = 'Margin Call (You Went Broke)'; }
+  else if (state.botScore <= 0) { trophy = '🏛️'; title = 'Hedge Fund Liquidated!'; }
+  else if (state.humanScore > state.botScore) { trophy = '📈'; title = 'Retail Beats Wall St.'; }
+  else if (state.botScore > state.humanScore) { trophy = '📉'; title = 'Algorithmic Dominance'; }
+  
   document.getElementById('endTrophy').textContent = trophy;
   document.getElementById('endTitle').textContent  = title;
-  document.getElementById('endSubtitle').textContent = `After ${state.round} round${state.round!==1?'s':''}`;
+  document.getElementById('endSubtitle').textContent = `Concluded after ${state.round} trading rounds`;
 
   if (state.humanScore > state.botScore) playWin();
   else if (state.botScore > state.humanScore) playLoss();
@@ -1261,9 +1097,6 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
-
-function showQuitModal() { document.getElementById('quitModal').classList.add('show'); }
-function hideQuitModal() { document.getElementById('quitModal').classList.remove('show'); }
 
 function showToast(msg) {
   const t = document.getElementById('toast');
