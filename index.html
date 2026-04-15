@@ -505,7 +505,7 @@
 <div id="setup" class="screen active">
   <div class="header">
     <h1>♠ FINOPOLY QUANT ♠</h1>
-    <div class="subtitle">Prop Desk Operations</div>
+    <div class="subtitle">Prop Desk Operations (Pre-Flop)</div>
     <div class="divider"></div>
   </div>
 
@@ -513,9 +513,9 @@
     <h2>📈 The Currency Rules</h2>
     <p class="rules-text">Welcome to the Prop Desk. Both players start with <strong>$1,000</strong> in capital.</p>
     <ul class="rules-list">
-      <li><strong>The Bet:</strong> Each round, you may wager any amount from $10 up to your current bankroll.</li>
-      <li><strong>Time Limit:</strong> You have exactly <strong>15 seconds</strong> per round to place your bet. If you do not commit in time, your current input (or the minimum ante) is automatically submitted.</li>
-      <li><strong>Showdown Mechanics:</strong> The winner takes the loser's wager. Profits are capped at the winner's own wager amount (Effective Risk / Liquidity Matching). </li>
+      <li><strong>Hidden Community Card:</strong> The community card is dealt face down! You must calculate your wager based <strong>ONLY on your 2 initial hole cards.</strong></li>
+      <li><strong>Decoupled Payouts:</strong> Bets are independent. If you wager $X and win, you gain $X. If you lose, you lose $X. The bot's wagers affect only its own bankroll.</li>
+      <li><strong>Time Limit:</strong> You have exactly <strong>25 seconds</strong> per round to place your bet. If the timer expires, your current input (or the minimum ante) is submitted automatically.</li>
       <li><strong>Mandatory Ante:</strong> A minimum bet of <strong>$10</strong> is required every round.</li>
       <li><strong>Margin Call:</strong> If either player's bankroll hits $0, they are liquidated.</li>
     </ul>
@@ -574,10 +574,8 @@
 
     <div class="community-area">
       <div class="community-label">⟡ Market Indicator (Community) ⟡</div>
-      <div class="card community-card revealed" id="communityCard">
-        <div class="card-corner"><div class="card-rank" id="commRank">?</div><div class="card-suit" id="commSuit">?</div></div>
-        <div class="card-center" id="commCenter">?</div>
-        <div class="card-corner bottom"><div class="card-rank" id="commRankB">?</div><div class="card-suit" id="commSuitB">?</div></div>
+      <div class="card hidden-card community-card" id="communityCard">
+        <div class="hidden-pattern"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
       </div>
     </div>
 
@@ -611,7 +609,7 @@
       <div id="mcProgressArea">
         <div class="mc-title">Round Timer</div>
         <div class="progress-bar"><div class="progress-fill" id="mcFill"></div></div>
-        <div class="mc-stats"><span id="mcTime">15</span>s remaining</div>
+        <div class="mc-stats"><span id="mcTime">25</span>s remaining</div>
       </div>
     </div>
 
@@ -780,17 +778,17 @@ let state = {
 const formatCurr = (num) => '$' + Math.floor(num).toLocaleString();
 
 // ─────────────────────────────────────────────
-// ASYNC MONTE CARLO SIMULATION
+// ASYNC PRE-FLOP SIMULATION (25 Seconds)
 // ─────────────────────────────────────────────
-function runMonteCarloAsync(botHole, community, durationMs, progressCb) {
+function runMonteCarloAsync(botHole, durationMs, progressCb) {
   return new Promise(resolve => {
     let wins = 0;
     let trials = 0;
     const startTime = performance.now();
     const fullDeck = getDeck();
-    const knownCards = [...botHole, community];
-    const deck = fullDeck.filter(c => !knownCards.includes(c));
-    const botEv = evaluateHand([...botHole, community]);
+    
+    // The Bot only knows its 2 hole cards.
+    const deck = fullDeck.filter(c => !botHole.includes(c)); 
 
     function chunk() {
       const now = performance.now();
@@ -801,12 +799,21 @@ function runMonteCarloAsync(botHole, community, durationMs, progressCb) {
         return;
       }
 
-      for(let i=0; i<8000; i++) {
-        const r1 = Math.floor(Math.random() * deck.length);
+      for(let i=0; i<4000; i++) {
+        // Draw 3 distinct random cards (1 community, 2 human hole cards)
+        let r1 = Math.floor(Math.random() * deck.length);
         let r2 = Math.floor(Math.random() * deck.length);
         while(r2 === r1) r2 = Math.floor(Math.random() * deck.length);
+        let r3 = Math.floor(Math.random() * deck.length);
+        while(r3 === r1 || r3 === r2) r3 = Math.floor(Math.random() * deck.length);
 
-        const humanEv = evaluateHand([[deck[r1], deck[r2]][0], [deck[r1], deck[r2]][1], community]);
+        const comm = deck[r1];
+        const human1 = deck[r2];
+        const human2 = deck[r3];
+
+        const botEv = evaluateHand([...botHole, comm]);
+        const humanEv = evaluateHand([human1, human2, comm]);
+        
         const cmp = compareHands(botEv, humanEv);
         if (cmp === 1) wins++;
         else if (cmp === 0) wins += 0.5;
@@ -849,12 +856,12 @@ function dealRound() {
 
   playDeal();
 
-  renderCard(state.community, 'commRank','commSuit','commCenter','commRankB','commSuitB','communityCard');
+  // Keep Community Card Hidden safely without deleting inner content
+  document.getElementById('communityCard').innerHTML = `<div class="hidden-pattern"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>`;
+  document.getElementById('communityCard').className = 'card hidden-card community-card';
+
   renderCard(state.humanHole[0], 'h1Rank','h1Suit','h1Center','h1RankB','h1SuitB','humanCard1');
   renderCard(state.humanHole[1], 'h2Rank','h2Suit','h2Center','h2RankB','h2SuitB','humanCard2');
-
-  state.humanEv = evaluateHand([...state.humanHole, state.community]);
-  state.botEv   = evaluateHand([...state.botHole, state.community]);
 
   ['botCard1','botCard2'].forEach(id => {
     document.getElementById(id).innerHTML = `<div class="hidden-pattern">${'<span></span>'.repeat(9)}</div>`;
@@ -864,7 +871,7 @@ function dealRound() {
   document.getElementById('resultPanel').classList.remove('show');
   document.getElementById('actionArea').style.display = 'flex';
   
-  // Show input and progress simultaneously
+  // Show input and timer simultaneously
   document.getElementById('bettingInputArea').style.display = 'block';
   document.getElementById('mcProgressArea').style.display = 'flex';
   
@@ -878,10 +885,9 @@ function dealRound() {
   btn.textContent = 'Commit Capital';
   document.getElementById('maxBetLabel').textContent = formatCurr(state.humanScore);
   
-  // Start 15s timer immediately
-  const simTimeMs = 15000; 
-  runMonteCarloAsync(state.botHole, state.community, simTimeMs, (perc, trials, msLeft) => {
-    // Shrink the bar down over 15 seconds
+  // Start 25s timer immediately
+  const simTimeMs = 25000; 
+  runMonteCarloAsync(state.botHole, simTimeMs, (perc, trials, msLeft) => {
     document.getElementById('mcFill').style.width = `${(1 - perc) * 100}%`;
     document.getElementById('mcTime').textContent = Math.ceil(msLeft / 1000);
   }).then(p => {
@@ -896,6 +902,7 @@ function dealRound() {
       state.userCommitted = true;
     }
 
+    // Mathematical Strategy Execution
     const fFull = (2 * p) - 1;
     const fHalf = fFull / 2;
     
@@ -926,35 +933,53 @@ function executeWager() {
   state.humanBet = humanBet;
   state.userCommitted = true;
   
-  // Lock UI while waiting for round timer to finish
+  // Lock UI while waiting for 25s round timer to finish
   document.getElementById('humanBetInput').disabled = true;
   const btn = document.getElementById('placeBetBtn');
   btn.disabled = true;
   btn.textContent = 'Committed (Waiting...)';
 }
 
+// BUG FIX: Completely rebuild the community card safely
+function revealCommunityCard(raw) {
+  const r = raw[0], s = raw[1];
+  const rDisp = rankDisplay(r);
+  const sSym  = SUIT_SYMBOL[s];
+  const isRed = SUIT_COLOR[s] === 'red';
+  const el = document.getElementById('communityCard');
+  el.className = 'card revealed community-card ' + (isRed ? 'red-card' : 'black-card');
+  el.innerHTML = `
+    <div class="card-corner"><div class="card-rank">${rDisp}</div><div class="card-suit">${sSym}</div></div>
+    <div class="card-center">${sSym}</div>
+    <div class="card-corner bottom"><div class="card-rank">${rDisp}</div><div class="card-suit">${sSym}</div></div>
+  `;
+}
+
 function resolveRound() {
   document.getElementById('actionArea').style.display = 'none';
 
+  // REVEAL Phase: Safely show the community card using the new function
+  revealCommunityCard(state.community);
+
+  // Evaluate final hands
+  state.humanEv = evaluateHand([...state.humanHole, state.community]);
+  state.botEv   = evaluateHand([...state.botHole, state.community]);
+
   const winner = compareHands(state.humanEv, state.botEv);
-  const matchedBet = Math.min(state.humanBet, state.botBet);
   
   let dHuman = 0, dBot = 0;
   
-  if (state.humanBet === 0 && state.botBet === 0) {
-    // Both folded
-  } else if (state.humanBet === 0) {
-    dHuman = 0; dBot = 0;
-  } else if (state.botBet === 0) {
-    dHuman = 0; dBot = 0;
+  // Decoupled Bets Logic
+  if (winner === 1) {
+    dHuman = state.humanBet;
+    dBot = -state.botBet;
+  } else if (winner === -1) {
+    dHuman = -state.humanBet;
+    dBot = state.botBet;
   } else {
-    if (winner === 1) {
-      dHuman = +matchedBet;
-      dBot = -matchedBet;
-    } else if (winner === -1) {
-      dHuman = -matchedBet;
-      dBot = +matchedBet;
-    }
+    // Tie
+    dHuman = 0; 
+    dBot = 0;
   }
 
   state.humanScore += dHuman;
@@ -967,7 +992,7 @@ function resolveRound() {
   revealBotCard(state.botHole[0], 'botCard1');
   revealBotCard(state.botHole[1], 'botCard2');
 
-  showResult(winner, dHuman, dBot, matchedBet);
+  showResult(winner, dHuman, dBot);
   updateScoreDisplay();
 
   if (state.humanScore <= 0 || state.botScore <= 0 || state.round >= state.totalRounds) {
@@ -987,7 +1012,6 @@ function renderCard(raw, rankId, suitId, centerId, rankBId, suitBId, cardId) {
   const el = document.getElementById(cardId);
   if (el) {
     el.className = 'card revealed ' + (isRed ? 'red-card' : 'black-card');
-    if (cardId === 'communityCard') el.classList.add('community-card');
   }
   document.getElementById(rankId).textContent  = rDisp;
   document.getElementById(suitId).textContent  = sSym;
@@ -1022,7 +1046,7 @@ function revealBotCard(raw, cardId) {
   `;
 }
 
-function showResult(winner, dHuman, dBot, matchedBet) {
+function showResult(winner, dHuman, dBot) {
   const panel = document.getElementById('resultPanel');
   const headline = document.getElementById('resultHeadline');
   const summary  = document.getElementById('betSummary');
@@ -1030,18 +1054,14 @@ function showResult(winner, dHuman, dBot, matchedBet) {
   const botReveal = document.getElementById('botReveal');
 
   let headText = '', headClass = '';
-  if (state.humanBet === 0 && state.botBet === 0) { headText = 'No Liquidity (Both Folded)'; headClass = 'tie'; }
-  else if (state.humanBet === 0) { headText = 'You Folded'; headClass = 'lose'; }
-  else if (state.botBet === 0)   { headText = 'Bot Folded'; headClass = 'win'; }
-  else if (winner === 1)  { headText = '💰 Alpha Generated!'; headClass = 'win'; }
-  else if (winner === -1) { headText = '📉 Trade Loss'; headClass = 'lose'; }
+  if (winner === 1)  { headText = '💰 You Won the Hand!'; headClass = 'win'; }
+  else if (winner === -1) { headText = '📉 Bot Won the Hand!'; headClass = 'lose'; }
   else { headText = '🤝 Market Neutral (Tie)'; headClass = 'tie'; }
 
   headline.textContent = headText;
   headline.className = 'result-headline ' + headClass;
 
-  summary.innerHTML = `You wagered: <span>${formatCurr(state.humanBet)}</span> | Bot wagered: <span>${formatCurr(state.botBet)}</span><br>
-                       Effective Risk (Matched Pot): <span>${formatCurr(matchedBet)}</span>`;
+  summary.innerHTML = `You wagered: <span>${formatCurr(state.humanBet)}</span> | Bot wagered: <span>${formatCurr(state.botBet)}</span>`;
 
   botReveal.innerHTML = state.botHole.map(c => renderSmallCard(c)).join('');
 
